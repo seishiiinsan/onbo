@@ -121,11 +121,27 @@ model Project {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  agency  Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
-  clients ClientProject[]
-  steps   OnboardingStep[]
+  agency      Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clients     ClientProject[]
+  steps       OnboardingStep[]
+  portalLinks PortalLink[]
 
   @@index([agencyId])
+}
+
+/// Lien magique donnant acces au portail d'un projet.
+/// Revocable, regenerable, sans compte cote client (MVP, cf. issue #19).
+model PortalLink {
+  id         String    @id @default(cuid())
+  tokenHash  String    @unique
+  projectId  String
+  revokedAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 /// Pivot : quel client voit quel projet.

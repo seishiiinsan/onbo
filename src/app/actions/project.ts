@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import type { ProjectStatus, StepKind, StepStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { issuePortalLink, revokePortalLinks } from "@/lib/portal";
 import { requireTenant } from "@/lib/tenant";
 
 export type FormState = { error?: string };
@@ -202,4 +203,18 @@ export async function detachClient(clientProjectId: string) {
 
   await prisma.clientProject.delete({ where: { id: link.id } });
   revalidatePath(`/app/projects/${link.projectId}`);
+}
+
+/** Emet (ou renouvelle) le lien de portail du projet. */
+export async function regeneratePortalLink(projectId: string) {
+  const { project } = await scopedProject(projectId);
+  const token = await issuePortalLink(project.id);
+  revalidatePath(`/app/projects/${project.id}`);
+  return token;
+}
+
+export async function revokePortalLink(projectId: string) {
+  const { project } = await scopedProject(projectId);
+  await revokePortalLinks(project.id);
+  revalidatePath(`/app/projects/${project.id}`);
 }

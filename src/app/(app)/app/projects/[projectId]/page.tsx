@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgressBar } from "@/components/progress-bar";
 import { AddStepForm } from "./add-step-form";
 import { ClientsPanel } from "./clients-panel";
+import { PortalPanel } from "./portal-panel";
 import { ProjectHeader } from "./project-header";
 import { StepRow } from "./step-row";
 
@@ -25,12 +26,18 @@ export default async function ProjectPage({
     include: {
       steps: { orderBy: { position: "asc" } },
       clients: { include: { client: true }, orderBy: { createdAt: "asc" } },
+      portalLinks: {
+        where: { revokedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
     },
   });
 
   if (!project) notFound();
 
   const progress = progressOf(project.steps);
+  const activeLink = project.portalLinks[0] ?? null;
 
   return (
     <>
@@ -82,7 +89,17 @@ export default async function ProjectPage({
           </CardContent>
         </Card>
 
-        <ClientsPanel
+        <div className="space-y-6">
+          <PortalPanel
+            projectId={project.id}
+            hasActiveLink={Boolean(activeLink)}
+            lastUsedAt={
+              activeLink?.lastUsedAt
+                ? activeLink.lastUsedAt.toLocaleString("fr-FR")
+                : null
+            }
+          />
+          <ClientsPanel
           projectId={project.id}
           links={project.clients.map((link) => ({
             id: link.id,
@@ -90,7 +107,8 @@ export default async function ProjectPage({
             name: link.client.name,
             company: link.client.company,
           }))}
-        />
+          />
+        </div>
       </div>
     </>
   );
