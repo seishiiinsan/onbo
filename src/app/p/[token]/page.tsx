@@ -1,10 +1,16 @@
 import { notFound } from "next/navigation";
-import { progressOf, KIND_LABEL, STATUS_LABEL } from "@/lib/progress";
+import { progressOf } from "@/lib/progress";
 import { resolvePortalToken, touchPortalLink } from "@/lib/portal";
-import { ProgressBar } from "@/components/progress-bar";
+import { prisma } from "@/lib/prisma";
+import { ProgressBar } from "@/components/ui/progress";
 import { PortalStep } from "./portal-step";
 
 export const metadata = { title: "Votre espace projet" };
+
+const dateFormat = new Intl.DateTimeFormat("fr-FR", {
+  dateStyle: "short",
+  timeStyle: "short",
+});
 
 export default async function PortalPage({
   params,
@@ -19,68 +25,103 @@ export default async function PortalPage({
 
   const { project } = link;
   const agency = project.agency;
-  const progress = progressOf(project.steps);
+
+  // Le portail ne sert jamais les notes internes ni les secrets deposes.
+  const steps = await prisma.onboardingStep.findMany({
+    where: { projectId: project.id },
+    orderBy: { position: "asc" },
+    include: {
+      assets: { orderBy: { createdAt: "asc" } },
+      comments: {
+        where: { internal: false },
+        orderBy: { createdAt: "asc" },
+      },
+      credentials: {
+        orderBy: { createdAt: "asc" },
+        select: { id: true, label: true, kind: true, createdAt: true },
+      },
+    },
+  });
+
+  const progress = progressOf(steps);
+  const remaining = steps.filter((step) => step.status !== "VALIDATED").length;
 
   return (
     <div
       className="min-h-screen"
-      style={{ ["--color-accent" as string]: agency.accentColor }}
+      style={{ ["--color-brand" as string]: agency.accentColor }}
     >
-      <header className="border-b border-[var(--color-line)] bg-white">
-        <div className="mx-auto flex h-16 max-w-3xl items-center gap-3 px-6">
+      <header className="border-b border-[var(--color-line)] bg-[var(--color-surface)]">
+        <div className="mx-auto flex h-16 max-w-3xl items-center gap-3 px-5">
           {agency.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={agency.logoUrl}
-              alt={agency.name}
-              className="h-8 w-auto"
-            />
+            <img src={agency.logoUrl} alt={agency.name} className="h-8 w-auto" />
           ) : (
-            <span className="font-semibold tracking-tight">{agency.name}</span>
+            <span className="font-display text-xl">{agency.name}</span>
           )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 py-8">
-        <h1 className="text-xl font-semibold tracking-tight">{project.name}</h1>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">
-          Voici ce dont {agency.name} a besoin pour démarrer. Marquez chaque
-          point au fur et à mesure — vous pouvez revenir quand vous voulez.
+      <main className="mx-auto max-w-3xl px-5 py-10">
+        <h1 className="font-display text-4xl leading-tight">{project.name}</h1>
+        <p className="mt-2 max-w-xl text-[var(--color-muted)]">
+          {agency.name} a besoin des éléments ci-dessous pour démarrer. Déposez
+          vos fichiers, transmettez vos accès en sécurité, et cochez au fur et à
+          mesure. Vous pouvez revenir quand vous voulez.
         </p>
 
-        <div className="mt-6 mb-8">
+        <div className="mt-8 mb-10 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-5">
+          <div className="mb-3 flex items-baseline justify-between">
+            <span className="font-display text-2xl">{progress}%</span>
+            <span className="text-sm text-[var(--color-muted)]">
+              {remaining === 0
+                ? "Tout est transmis, merci !"
+                : `${remaining} point(s) restant(s)`}
+            </span>
+          </div>
           <ProgressBar value={progress} />
-          <p className="mt-2 text-xs text-[var(--color-muted)]">
-            {progress}% complété
-          </p>
         </div>
 
-        {project.steps.length === 0 ? (
+        {steps.length === 0 ? (
           <p className="text-sm text-[var(--color-muted)]">
             Aucune étape pour l&apos;instant. {agency.name} vous préviendra.
           </p>
         ) : (
-          <ul className="space-y-3">
-            {project.steps.map((step) => (
+          <ul className="grid gap-3">
+            {steps.map((step) => (
               <PortalStep
                 key={step.id}
                 token={token}
+                agencyName={agency.name}
                 step={{
                   id: step.id,
                   title: step.title,
                   description: step.description,
-                  kindLabel: KIND_LABEL[step.kind],
+                  kind: step.kind,
                   status: step.status,
-                  statusLabel: STATUS_LABEL[step.status],
+                  assets: step.assets.map((asset) => ({
+                    id: asset.id,
+                    filename: asset.filename,
+                    size: asset.size,
+                  })),
+                  credentials: step.credentials.map((credential) => ({
+                    id: credential.id,
+                    label: credential.label,
+                  })),
+                  comments: step.comments.map((comment) => ({
+                    id: comment.id,
+                    body: comment.body,
+                    author: comment.author,
+                    at: dateFormat.format(comment.createdAt),
+                  })),
                 }}
               />
             ))}
           </ul>
         )}
 
-        <p className="mt-10 text-xs text-[var(--color-muted)]">
-          Le dépôt de fichiers et la transmission sécurisée de vos accès
-          arrivent prochainement.
+        <p className="mt-12 text-center text-xs text-[var(--color-muted)]">
+          Espace sécurisé fourni par {agency.name} · propulsé par Onbo
         </p>
       </main>
     </div>

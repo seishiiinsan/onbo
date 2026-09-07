@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/tenant";
+import { Wordmark } from "@/components/logo";
 import { AgencyForm } from "./agency-form";
 
 export const metadata = { title: "Créer votre espace · Onbo" };
@@ -14,12 +15,15 @@ export default async function OnboardingPage() {
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-sm">
-        <h1 className="mb-1 text-2xl font-bold tracking-tight">
-          Créez votre espace
-        </h1>
-        <p className="mb-6 text-sm text-[var(--color-muted)]">
-          Un espace = une agence. Vous pourrez inviter votre équipe ensuite.
-        </p>
+        <div className="mb-8">
+          <Wordmark />
+          <h1 className="mt-6 font-display text-3xl leading-tight">
+            Créez votre espace
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-muted)]">
+            Un espace = une agence. Vous inviterez votre équipe ensuite.
+          </p>
+        </div>
         <AgencyForm />
       </div>
     </main>

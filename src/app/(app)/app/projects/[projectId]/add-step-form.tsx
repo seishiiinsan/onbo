@@ -4,7 +4,7 @@ import { useActionState, useRef } from "react";
 import { addStep, type FormState } from "@/app/actions/project";
 import { KIND_LABEL } from "@/lib/progress";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 
 const initial: FormState = {};
 
@@ -28,17 +28,13 @@ export function AddStepForm({ projectId }: { projectId: string }) {
         required
         className="w-52"
       />
-      <select
-        name="kind"
-        defaultValue="OTHER"
-        className="h-9 rounded-lg border border-[var(--color-line)] bg-white px-2 text-sm"
-      >
+      <Select name="kind" defaultValue="OTHER" className="w-36">
         {Object.entries(KIND_LABEL).map(([value, label]) => (
           <option key={value} value={value}>
             {label}
           </option>
         ))}
-      </select>
+      </Select>
       <Input name="description" placeholder="Description (option)" className="w-56" />
       <Button type="submit" size="sm" disabled={pending}>
         Ajouter

@@ -7,85 +7,115 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Props = {
   projectId: string;
-  /**
-   * Un lien est actif, mais son URL n'est pas connue du serveur : seul le hash
-   * du token est stocke. L'URL n'est affichable qu'a la generation.
-   */
   hasActiveLink: boolean;
+  /** Chemin du lien actif (`/p/<token>`), complete par l'origine cote client. */
+  activeUrl: string | null;
   lastUsedAt: string | null;
 };
 
-export function PortalPanel({ projectId, hasActiveLink, lastUsedAt }: Props) {
+export function PortalPanel({
+  projectId,
+  hasActiveLink,
+  activeUrl,
+  lastUsedAt,
+}: Props) {
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
-  const [freshUrl, setFreshUrl] = useState<string | null>(null);
+  const [path, setPath] = useState<string | null>(activeUrl);
 
-  const url = freshUrl;
+  const url =
+    path && typeof window !== "undefined"
+      ? `${window.location.origin}${path}`
+      : path;
 
+  /**
+   * navigator.clipboard n'existe qu'en contexte securise (HTTPS ou localhost).
+   * Sur une IP en HTTP, on retombe sur une selection + execCommand.
+   */
   const copy = async () => {
     if (!url) return;
-    await navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const field = document.createElement("textarea");
+        field.value = url;
+        field.style.position = "fixed";
+        field.style.opacity = "0";
+        document.body.appendChild(field);
+        field.select();
+        document.execCommand("copy");
+        document.body.removeChild(field);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
   };
 
   return (
     <Card className="self-start">
       <CardHeader>
-        <CardTitle>Lien du portail client</CardTitle>
+        <CardTitle>Portail client</CardTitle>
       </CardHeader>
       <CardContent>
         {url ? (
           <>
-            <p className="mb-2 break-all rounded-lg bg-[var(--color-canvas)] p-2 text-xs">
+            <p className="mb-2.5 break-all rounded-lg bg-[var(--color-canvas)] p-2.5 text-xs leading-relaxed">
               {url}
             </p>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" onClick={copy}>
-                {copied ? "Copié" : "Copier"}
+              <Button size="sm" variant="accent" onClick={copy}>
+                {copied ? "Copié" : "Copier le lien"}
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
+              <a href={path ?? "#"} target="_blank" rel="noreferrer">
+                <Button size="sm" variant="outline">
+                  Ouvrir
+                </Button>
+              </a>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-3 text-xs">
+              <button
+                type="button"
                 disabled={pending}
                 onClick={() =>
                   startTransition(async () => {
                     const token = await regeneratePortalLink(projectId);
-                    setFreshUrl(`${window.location.origin}/p/${token}`);
+                    setPath(`/p/${token}`);
                   })
                 }
+                className="text-[var(--color-muted)] underline-offset-2 hover:underline"
               >
                 Régénérer
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
+              </button>
+              <button
+                type="button"
                 disabled={pending}
                 onClick={() =>
                   startTransition(async () => {
                     await revokePortalLink(projectId);
-                    setFreshUrl(null);
+                    setPath(null);
                   })
                 }
+                className="text-[var(--color-muted)] underline-offset-2 hover:underline hover:text-[var(--color-danger)]"
               >
                 Révoquer
-              </Button>
+              </button>
             </div>
             <p className="mt-2 text-xs text-[var(--color-muted)]">
               {lastUsedAt
                 ? `Dernier accès client : ${lastUsedAt}`
                 : "Jamais ouvert par le client."}
             </p>
-            <p className="mt-1 text-xs text-[var(--color-muted)]">
-              Régénérer invalide l&apos;ancien lien.
-            </p>
           </>
         ) : (
           <>
             <p className="mb-3 text-sm text-[var(--color-muted)]">
               {hasActiveLink
-                ? "Un lien est actif. Pour des raisons de sécurité il n'est affiché qu'à sa création : régénérez-en un si vous l'avez perdu (l'ancien sera invalidé)."
-                : "Aucun lien actif. Générez-en un et envoyez-le à votre client."}
+                ? "Lien révoqué. Générez-en un nouveau pour redonner l'accès."
+                : "Générez le lien à envoyer à votre client. Aucun compte ne lui sera demandé."}
             </p>
             <Button
               size="sm"
@@ -94,15 +124,11 @@ export function PortalPanel({ projectId, hasActiveLink, lastUsedAt }: Props) {
               onClick={() =>
                 startTransition(async () => {
                   const token = await regeneratePortalLink(projectId);
-                  setFreshUrl(`${window.location.origin}/p/${token}`);
+                  setPath(`/p/${token}`);
                 })
               }
             >
-              {pending
-                ? "Génération…"
-                : hasActiveLink
-                  ? "Régénérer le lien"
-                  : "Générer le lien"}
+              {pending ? "Génération…" : "Générer le lien"}
             </Button>
           </>
         )}

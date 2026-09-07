@@ -29,7 +29,7 @@ export function ClientsPanel({
   return (
     <Card className="self-start">
       <CardHeader>
-        <CardTitle>Contacts client</CardTitle>
+        <CardTitle>Contacts</CardTitle>
       </CardHeader>
       <CardContent>
         {links.length === 0 ? (
@@ -83,7 +83,7 @@ export function ClientsPanel({
             {pending ? "Ajout…" : "Ajouter un contact"}
           </Button>
           <p className="text-xs text-[var(--color-muted)]">
-            L&apos;envoi du lien de portail arrive avec l&apos;issue #11.
+            Transmettez-leur le lien du portail ci-dessus.
           </p>
         </form>
       </CardContent>

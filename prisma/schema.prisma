@@ -114,12 +114,18 @@ model Client {
 
 /// Un onboarding / un site, appartient a une agence.
 model Project {
-  id        String        @id @default(cuid())
-  name      String
-  status    ProjectStatus @default(DRAFT)
-  agencyId  String
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  name             String
+  status           ProjectStatus @default(DRAFT)
+  agencyId         String
+  /// Relances automatiques : desactivables par projet.
+  remindersEnabled Boolean       @default(true)
+  /// Nombre de jours sans mouvement avant relance.
+  reminderDays     Int           @default(3)
+  /// Garde-fou anti-spam : une relance par projet et par fenetre.
+  lastReminderAt   DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   agency      Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   clients     ClientProject[]
@@ -130,10 +136,14 @@ model Project {
 }
 
 /// Lien magique donnant acces au portail d'un projet.
+///
+/// Le token est stocke en clair, contrairement aux sessions staff : c'est une
+/// URL de partage que l'agence doit pouvoir recopier a tout moment. La
+/// protection tient a l'entropie du token (32 octets) et a la revocation.
 /// Revocable, regenerable, sans compte cote client (MVP, cf. issue #19).
 model PortalLink {
   id         String    @id @default(cuid())
-  tokenHash  String    @unique
+  token      String    @unique
   projectId  String
   revokedAt  DateTime?
   lastUsedAt DateTime?
@@ -158,6 +168,83 @@ model ClientProject {
   @@index([projectId])
 }
 
+enum CommentAuthor {
+  AGENCY
+  CLIENT
+}
+
+enum CredentialKind {
+  HOSTING
+  DOMAIN
+  CMS
+  SOCIAL
+  ANALYTICS
+  OTHER
+}
+
+/// Fil de discussion d'une etape. Une note interne n'est jamais servie au portail.
+model Comment {
+  id         String        @id @default(cuid())
+  body       String
+  author     CommentAuthor
+  authorName String?
+  internal   Boolean       @default(false)
+  stepId     String
+  createdAt  DateTime      @default(now())
+
+  step OnboardingStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([stepId])
+}
+
+/// Fichier depose sur une etape. Le binaire vit hors base (volume disque).
+model Asset {
+  id               String   @id @default(cuid())
+  filename         String
+  mimeType         String
+  size             Int
+  storageKey       String   @unique
+  uploadedByClient Boolean  @default(false)
+  stepId           String
+  createdAt        DateTime @default(now())
+
+  step OnboardingStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([stepId])
+}
+
+/// Acces client. Le secret est chiffre en AES-256-GCM, cle hors base.
+model Credential {
+  id           String         @id @default(cuid())
+  label        String
+  kind         CredentialKind @default(OTHER)
+  username     String?
+  url          String?
+  secretCipher String
+  secretIv     String
+  secretTag    String
+  notes        String?
+  stepId       String
+  createdAt    DateTime       @default(now())
+
+  step      OnboardingStep     @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  accessLog CredentialAccess[]
+
+  @@index([stepId])
+}
+
+/// Journal des revelations de secret : qui a lu quoi, et quand.
+model CredentialAccess {
+  id           String   @id @default(cuid())
+  credentialId String
+  userId       String
+  at           DateTime @default(now())
+
+  credential Credential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@index([credentialId])
+}
+
 model OnboardingStep {
   id          String     @id @default(cuid())
   title       String
@@ -169,7 +256,10 @@ model OnboardingStep {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  assets      Asset[]
+  credentials Credential[]
 
   @@index([projectId])
 }

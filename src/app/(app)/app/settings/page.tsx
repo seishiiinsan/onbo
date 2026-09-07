@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
+import { PageHeader } from "@/components/page-header";
 import { BrandingForm } from "./branding-form";
 
 export const metadata = { title: "Réglages · Onbo" };
@@ -13,10 +14,10 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <h1 className="mb-1 text-xl font-semibold tracking-tight">Réglages</h1>
-      <p className="mb-6 text-sm text-[var(--color-muted)]">
-        Branding appliqué au portail que vos clients verront.
-      </p>
+      <PageHeader
+        title="Réglages"
+        subtitle="Ce branding s'applique au portail que vos clients ouvrent."
+      />
       <BrandingForm
         canEdit={ctx.role !== "MEMBER"}
         agency={{

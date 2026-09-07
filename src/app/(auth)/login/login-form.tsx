@@ -15,13 +15,10 @@ export function LoginForm() {
   if (state.sent) {
     return (
       <Card>
-        <CardContent className="text-sm">
-          <p className="font-medium">Lien envoyé.</p>
-          <p className="mt-1 text-[var(--color-muted)]">
-            Vérifiez votre boîte mail. Le lien est valable 15 minutes.
-          </p>
-          <p className="mt-3 text-xs text-[var(--color-muted)]">
-            En développement, le lien s&apos;affiche dans les logs du serveur.
+        <CardContent>
+          <p className="font-display text-xl">Lien envoyé.</p>
+          <p className="mt-1.5 text-sm text-[var(--color-muted)]">
+            Ouvrez votre boîte mail. Le lien est valable 15 minutes.
           </p>
         </CardContent>
       </Card>
@@ -42,7 +39,9 @@ export function LoginForm() {
             required
           />
           {state.error && (
-            <p className="mt-2 text-sm text-red-600">{state.error}</p>
+            <p className="mt-2 text-sm text-[var(--color-danger)]">
+              {state.error}
+            </p>
           )}
           <Button
             type="submit"
@@ -50,11 +49,8 @@ export function LoginForm() {
             className="mt-4 w-full"
             disabled={pending}
           >
-            {pending ? "Envoi…" : "Recevoir un lien de connexion"}
+            {pending ? "Envoi…" : "Recevoir mon lien"}
           </Button>
-          <p className="mt-3 text-xs text-[var(--color-muted)]">
-            Pas de mot de passe : un lien à usage unique par email.
-          </p>
         </form>
       </CardContent>
     </Card>

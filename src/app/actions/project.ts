@@ -218,3 +218,27 @@ export async function revokePortalLink(projectId: string) {
   await revokePortalLinks(project.id);
   revalidatePath(`/app/projects/${project.id}`);
 }
+
+/** Reglage des relances automatiques du projet (issue #16). */
+export async function updateReminders(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const { project } = await scopedProject(String(formData.get("projectId")));
+  const days = Number(formData.get("reminderDays"));
+
+  if (!Number.isInteger(days) || days < 1 || days > 30) {
+    return { error: "Délai attendu entre 1 et 30 jours." };
+  }
+
+  await prisma.project.update({
+    where: { id: project.id },
+    data: {
+      remindersEnabled: formData.get("remindersEnabled") === "on",
+      reminderDays: days,
+    },
+  });
+
+  revalidatePath(`/app/projects/${project.id}`);
+  return {};
+}

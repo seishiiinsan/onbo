@@ -1,16 +1,22 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { progressOf, PROJECT_STATUS_LABEL } from "@/lib/progress";
+import { progressOf } from "@/lib/progress";
 import { requireTenant } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ProgressBar } from "@/components/progress-bar";
+import { ProgressBar } from "@/components/ui/progress";
 import { AddStepForm } from "./add-step-form";
 import { ClientsPanel } from "./clients-panel";
 import { PortalPanel } from "./portal-panel";
 import { ProjectHeader } from "./project-header";
-import { StepRow } from "./step-row";
+import { RemindersPanel } from "./reminders-panel";
+import { StepCard } from "./step-card";
 
 export const metadata = { title: "Projet · Onbo" };
+
+const dateFormat = new Intl.DateTimeFormat("fr-FR", {
+  dateStyle: "short",
+  timeStyle: "short",
+});
 
 export default async function ProjectPage({
   params,
@@ -24,7 +30,19 @@ export default async function ProjectPage({
   const project = await prisma.project.findFirst({
     where: { id: projectId, agencyId: ctx.agencyId },
     include: {
-      steps: { orderBy: { position: "asc" } },
+      steps: {
+        orderBy: { position: "asc" },
+        include: {
+          assets: { orderBy: { createdAt: "asc" } },
+          comments: { orderBy: { createdAt: "asc" } },
+          credentials: {
+            orderBy: { createdAt: "asc" },
+            include: {
+              accessLog: { orderBy: { at: "desc" }, take: 1 },
+            },
+          },
+        },
+      },
       clients: { include: { client: true }, orderBy: { createdAt: "asc" } },
       portalLinks: {
         where: { revokedAt: null },
@@ -38,75 +56,116 @@ export default async function ProjectPage({
 
   const progress = progressOf(project.steps);
   const activeLink = project.portalLinks[0] ?? null;
+  const awaiting = project.steps.filter(
+    (step) => step.status === "SUBMITTED",
+  ).length;
 
   return (
     <>
       <ProjectHeader
-        project={{
-          id: project.id,
-          name: project.name,
-          status: project.status,
-          statusLabel: PROJECT_STATUS_LABEL[project.status],
-        }}
+        project={{ id: project.id, name: project.name, status: project.status }}
       />
 
-      <div className="mb-8">
-        <ProgressBar value={progress} />
-        <p className="mt-2 text-xs text-[var(--color-muted)]">
-          {progress}% complété · {project.steps.length} étape(s)
+      <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-2">
+        <div className="min-w-52 flex-1">
+          <ProgressBar value={progress} />
+        </div>
+        <p className="text-sm text-[var(--color-muted)]">
+          <span className="font-medium text-[var(--color-ink)]">
+            {progress}%
+          </span>{" "}
+          · {project.steps.length} étape(s)
+          {awaiting > 0 && (
+            <>
+              {" · "}
+              <span className="text-[var(--color-submitted)]">
+                {awaiting} en attente de validation
+              </span>
+            </>
+          )}
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-[1fr_320px]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Checklist d&apos;onboarding</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {project.steps.length === 0 ? (
-              <p className="p-4 text-sm text-[var(--color-muted)]">
-                Aucune étape. Ajoutez-en une ci-dessous.
-              </p>
-            ) : (
-              <ul>
-                {project.steps.map((step) => (
-                  <StepRow
-                    key={step.id}
-                    step={{
-                      id: step.id,
-                      title: step.title,
-                      description: step.description,
-                      kind: step.kind,
-                      status: step.status,
-                    }}
-                  />
-                ))}
-              </ul>
-            )}
-            <div className="border-t border-[var(--color-line)] p-4">
+      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+        <div>
+          <ul className="grid gap-2.5">
+            {project.steps.map((step) => (
+              <StepCard
+                key={step.id}
+                step={{
+                  id: step.id,
+                  title: step.title,
+                  description: step.description,
+                  kind: step.kind,
+                  status: step.status,
+                  assets: step.assets.map((asset) => ({
+                    id: asset.id,
+                    filename: asset.filename,
+                    size: asset.size,
+                    uploadedByClient: asset.uploadedByClient,
+                  })),
+                  credentials: step.credentials.map((credential) => ({
+                    id: credential.id,
+                    label: credential.label,
+                    kind: credential.kind,
+                    username: credential.username,
+                    url: credential.url,
+                    lastAccess: credential.accessLog[0]
+                      ? dateFormat.format(credential.accessLog[0].at)
+                      : null,
+                  })),
+                  comments: step.comments.map((comment) => ({
+                    id: comment.id,
+                    body: comment.body,
+                    author: comment.author,
+                    authorName: comment.authorName,
+                    internal: comment.internal,
+                    at: dateFormat.format(comment.createdAt),
+                  })),
+                }}
+              />
+            ))}
+          </ul>
+
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Ajouter une étape</CardTitle>
+            </CardHeader>
+            <CardContent>
               <AddStepForm projectId={project.id} />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="space-y-6">
           <PortalPanel
             projectId={project.id}
             hasActiveLink={Boolean(activeLink)}
+            activeUrl={activeLink ? `/p/${activeLink.token}` : null}
             lastUsedAt={
               activeLink?.lastUsedAt
-                ? activeLink.lastUsedAt.toLocaleString("fr-FR")
+                ? dateFormat.format(activeLink.lastUsedAt)
+                : null
+            }
+          />
+          <RemindersPanel
+            projectId={project.id}
+            enabled={project.remindersEnabled}
+            days={project.reminderDays}
+            lastReminderAt={
+              project.lastReminderAt
+                ? dateFormat.format(project.lastReminderAt)
                 : null
             }
           />
           <ClientsPanel
-          projectId={project.id}
-          links={project.clients.map((link) => ({
-            id: link.id,
-            email: link.client.email,
-            name: link.client.name,
-            company: link.client.company,
-          }))}
+            projectId={project.id}
+            links={project.clients.map((link) => ({
+              id: link.id,
+              email: link.client.email,
+              name: link.client.name,
+              company: link.client.company,
+            }))}
           />
         </div>
       </div>

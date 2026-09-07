@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
-import type { StepStatus } from "@prisma/client";
+import type { CredentialKind, StepStatus } from "@prisma/client";
+import { MissingEncryptionKey, seal } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
 import { resolvePortalToken } from "@/lib/portal";
 
@@ -12,6 +13,8 @@ import { resolvePortalToken } from "@/lib/portal";
  * Le client peut faire avancer une etape mais jamais la valider : la
  * validation reste une decision de l'agence (issue #14).
  */
+export type PortalFormState = { error?: string };
+
 export async function clientSetStepStatus(
   token: string,
   stepId: string,
@@ -37,4 +40,82 @@ export async function clientSetStepStatus(
 
   revalidatePath(`/p/${token}`);
   revalidatePath(`/app/projects/${link.projectId}`);
+}
+
+/** Etape appartenant au projet du lien, sinon 404. */
+async function stepOfLink(token: string, stepId: string) {
+  const link = await resolvePortalToken(token);
+  if (!link) notFound();
+
+  const step = await prisma.onboardingStep.findFirst({
+    where: { id: stepId, projectId: link.projectId },
+    select: { id: true },
+  });
+  if (!step) notFound();
+
+  return { link, step };
+}
+
+export async function clientAddComment(
+  _prev: PortalFormState,
+  formData: FormData,
+): Promise<PortalFormState> {
+  const token = String(formData.get("token") ?? "");
+  const { link, step } = await stepOfLink(token, String(formData.get("stepId")));
+  const body = String(formData.get("body") ?? "").trim();
+
+  if (body.length === 0) return { error: "Message vide." };
+
+  await prisma.comment.create({
+    data: { body, author: "CLIENT", stepId: step.id, internal: false },
+  });
+
+  revalidatePath(`/p/${token}`);
+  revalidatePath(`/app/projects/${link.projectId}`);
+  return {};
+}
+
+/**
+ * Depot d'un acces par le client.
+ *
+ * Le secret est chiffre des sa reception ; il n'est jamais relu cote portail,
+ * seule l'agence peut le reveler (issue #13).
+ */
+export async function clientAddCredential(
+  _prev: PortalFormState,
+  formData: FormData,
+): Promise<PortalFormState> {
+  const token = String(formData.get("token") ?? "");
+  const { link, step } = await stepOfLink(token, String(formData.get("stepId")));
+
+  const label = String(formData.get("label") ?? "").trim();
+  const secret = String(formData.get("secret") ?? "");
+
+  if (label.length < 2) return { error: "Indiquez de quel accès il s'agit." };
+  if (secret.length === 0) return { error: "Mot de passe ou clé manquant." };
+
+  try {
+    const sealed = seal(secret);
+    await prisma.credential.create({
+      data: {
+        label,
+        kind: String(formData.get("kind") ?? "OTHER") as CredentialKind,
+        username: String(formData.get("username") ?? "").trim() || null,
+        url: String(formData.get("url") ?? "").trim() || null,
+        secretCipher: sealed.cipher,
+        secretIv: sealed.iv,
+        secretTag: sealed.tag,
+        stepId: step.id,
+      },
+    });
+  } catch (error) {
+    if (error instanceof MissingEncryptionKey) {
+      return { error: "Dépôt d'accès momentanément indisponible." };
+    }
+    throw error;
+  }
+
+  revalidatePath(`/p/${token}`);
+  revalidatePath(`/app/projects/${link.projectId}`);
+  return {};
 }

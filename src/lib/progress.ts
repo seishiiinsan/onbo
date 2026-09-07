@@ -8,6 +8,14 @@ const WEIGHT: Record<StepStatus, number> = {
   VALIDATED: 1,
 };
 
+/** Au-dela de ce delai sans mouvement, une etape est consideree bloquee. */
+export const STALE_DAYS = 5;
+
+export function isStale(step: { status: StepStatus; updatedAt: Date }) {
+  if (step.status === "VALIDATED" || step.status === "SUBMITTED") return false;
+  return Date.now() - step.updatedAt.getTime() > STALE_DAYS * 86_400_000;
+}
+
 export function progressOf(steps: Pick<OnboardingStep, "status">[]) {
   if (steps.length === 0) return 0;
   const total = steps.reduce((sum, step) => sum + WEIGHT[step.status], 0);

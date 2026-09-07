@@ -1,10 +1,5 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
-
-/** Comme pour les sessions : seul le hash du token va en base. */
-function hash(token: string) {
-  return createHash("sha256").update(token).digest("hex");
-}
 
 /** Revoque les liens existants et en emet un nouveau. Retourne le token brut. */
 export async function issuePortalLink(projectId: string) {
@@ -16,7 +11,7 @@ export async function issuePortalLink(projectId: string) {
       data: { revokedAt: new Date() },
     }),
     prisma.portalLink.create({
-      data: { tokenHash: hash(token), projectId },
+      data: { token, projectId },
     }),
   ]);
 
@@ -36,7 +31,7 @@ export async function revokePortalLinks(projectId: string) {
  */
 export async function resolvePortalToken(token: string) {
   const link = await prisma.portalLink.findUnique({
-    where: { tokenHash: hash(token) },
+    where: { token },
     include: {
       project: {
         include: {

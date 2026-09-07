@@ -26,8 +26,29 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-onbo}:${POSTGRES_PASSWORD:-onbo}@db:5432/${POSTGRES_DB:-onbo}?schema=public
       NODE_ENV: production
       APP_URL: ${APP_URL:-http://localhost:3000}
+      UPLOAD_DIR: /app/uploads
+      ONBO_ENCRYPTION_KEY: ${ONBO_ENCRYPTION_KEY:?cle de chiffrement manquante}
+      CRON_SECRET: ${CRON_SECRET:-}
+    volumes:
+      - uploads:/app/uploads
     ports:
       - "${APP_BIND:-0.0.0.0}:${APP_PORT:-3000}:3000"
 
+  # Declencheur des relances : un appel par heure, pas d'ordonnanceur externe.
+  cron:
+    image: alpine:3.20
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      CRON_SECRET: ${CRON_SECRET:-}
+    command: >
+      sh -c "apk add --no-cache curl >/dev/null &&
+      while true; do
+        sleep 3600;
+        curl -s -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/cron/reminders >/dev/null || true;
+      done"
+
 volumes:
   db_data:
+  uploads:
