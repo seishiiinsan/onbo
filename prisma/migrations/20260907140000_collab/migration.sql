@@ -4,13 +4,6 @@ CREATE TYPE "CommentAuthor" AS ENUM ('AGENCY', 'CLIENT');
 -- CreateEnum
 CREATE TYPE "CredentialKind" AS ENUM ('HOSTING', 'DOMAIN', 'CMS', 'SOCIAL', 'ANALYTICS', 'OTHER');
 
--- DropIndex
-DROP INDEX "PortalLink_tokenHash_key";
-
--- AlterTable
-ALTER TABLE "PortalLink" DROP COLUMN "tokenHash",
-ADD COLUMN     "token" TEXT NOT NULL;
-
 -- CreateTable
 CREATE TABLE "Comment" (
     "id" TEXT NOT NULL,
@@ -79,9 +72,6 @@ CREATE INDEX "Credential_stepId_idx" ON "Credential"("stepId");
 
 -- CreateIndex
 CREATE INDEX "CredentialAccess_credentialId_idx" ON "CredentialAccess"("credentialId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "PortalLink_token_key" ON "PortalLink"("token");
 
 -- AddForeignKey
 ALTER TABLE "Comment" ADD CONSTRAINT "Comment_stepId_fkey" FOREIGN KEY ("stepId") REFERENCES "OnboardingStep"("id") ON DELETE CASCADE ON UPDATE CASCADE;
