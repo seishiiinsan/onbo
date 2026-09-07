@@ -120,9 +120,16 @@ export default async function PortalPage({
           </ul>
         )}
 
-        <p className="mt-12 text-center text-xs text-[var(--color-muted)]">
-          Espace sécurisé fourni par {agency.name} · propulsé par Onbo
-        </p>
+        <footer className="mt-14 border-t border-[var(--color-line)] pt-6 text-center">
+          <p className="text-xs leading-relaxed text-[var(--color-muted)]">
+            Vos fichiers et vos accès ne sont visibles que par {agency.name}.
+            Les mots de passe transmis ici sont chiffrés et ne circulent jamais
+            par email.
+          </p>
+          <p className="mt-2 text-xs text-[var(--color-muted)]">
+            Espace fourni par {agency.name} · propulsé par Onbo
+          </p>
+        </footer>
       </main>
     </div>
   );

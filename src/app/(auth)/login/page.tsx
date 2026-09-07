@@ -1,10 +1,14 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { Wordmark } from "@/components/logo";
+import { AsideQuote, AuthShell } from "@/components/auth-shell";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Connexion · Onbo" };
 
+/**
+ * Connexion et creation de compte au meme endroit : le lien magique cree le
+ * compte s'il n'existe pas, il n'y a donc rien a choisir a l'avance.
+ */
 export default async function LoginPage({
   searchParams,
 }: {
@@ -15,27 +19,27 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <div className="mb-8">
-          <Wordmark />
-          <h1 className="mt-6 font-display text-3xl leading-tight">
-            Votre espace agence
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Pas de mot de passe : un lien de connexion à usage unique.
-          </p>
-        </div>
-
-        {error === "link" && (
-          <p className="mb-4 rounded-xl border border-[var(--color-danger)]/25 bg-[var(--color-danger)]/5 p-3 text-sm text-[var(--color-danger)]">
-            Lien invalide ou expiré. Les liens valent 15 minutes et ne servent
-            qu\'une fois.
-          </p>
-        )}
-
-        <LoginForm />
-      </div>
-    </main>
+    <AuthShell
+      title="Connexion à votre espace"
+      subtitle="Nouveau sur Onbo ? La même adresse crée votre espace. Rien d'autre à remplir."
+      aside={
+        <AsideQuote
+          quote="Un lien envoyé, et la collecte se fait toute seule."
+          points={[
+            "Portail client à vos couleurs, sans compte à créer",
+            "Accès hébergeur et CMS reçus chiffrés",
+            "Relances automatiques quand ça traîne",
+          ]}
+        />
+      }
+    >
+      {error === "link" && (
+        <p className="mb-4 rounded-xl border border-[var(--color-danger)]/25 bg-[var(--color-danger)]/5 p-3 text-sm text-[var(--color-danger)]">
+          Ce lien n&apos;est plus valable. Ils durent 15 minutes et ne servent
+          qu&apos;une fois — demandez-en un nouveau.
+        </p>
+      )}
+      <LoginForm />
+    </AuthShell>
   );
 }

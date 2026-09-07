@@ -13,6 +13,7 @@ import {
 } from "@/app/actions/collab";
 import { deleteStep, setStepStatus } from "@/app/actions/project";
 import { CREDENTIAL_KIND_LABEL } from "@/components/credential-kind";
+import { StepIcon } from "@/components/step-icon";
 import { formatSize, Uploader } from "@/components/uploader";
 import { StepBadge, Tag } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,7 @@ export function StepCard({ step }: { step: StepCardData }) {
           className="min-w-0 flex-1 text-left"
         >
           <span className="flex flex-wrap items-center gap-2">
+            <StepIcon kind={step.kind} />
             <span className="font-medium">{step.title}</span>
             <Tag>{KIND_LABEL[step.kind]}</Tag>
             <StepBadge status={step.status} />

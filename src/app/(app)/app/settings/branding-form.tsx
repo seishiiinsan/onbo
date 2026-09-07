@@ -25,7 +25,10 @@ export function BrandingForm({ canEdit, agency }: Props) {
   return (
     <Card className="max-w-lg">
       <CardHeader>
-        <CardTitle>Identité de l&apos;agence</CardTitle>
+        <CardTitle>Identité</CardTitle>
+        <span className="text-xs text-[var(--color-muted)]">
+          Appliquée au portail client
+        </span>
       </CardHeader>
       <CardContent>
         <form action={action}>

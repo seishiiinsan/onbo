@@ -30,6 +30,10 @@
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
 
   --radius-card: 14px;
+
+  /* Chrome applicatif : la sidebar se distingue du contenu sans le concurrencer. */
+  --color-rail: #fbfaf8;
+  --sidebar-width: 15rem;
 }
 
 @layer base {
@@ -60,5 +64,21 @@
 @layer components {
   .field-label {
     @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--color-muted)];
+  }
+
+  /* Un seul style de focus dans toute l'app. */
+  .focusable {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-canvas)];
+  }
+
+  .section-label {
+    @apply text-[11px] font-semibold uppercase tracking-wider text-[var(--color-muted)];
+  }
+}
+
+@layer utilities {
+  /* Squelettes de chargement. */
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-black/[0.06];
   }
 }

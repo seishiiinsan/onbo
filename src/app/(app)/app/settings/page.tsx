@@ -32,7 +32,7 @@ export default async function SettingsPage() {
     <>
       <PageHeader
         title="Réglages"
-        subtitle="Ce branding s'applique au portail que vos clients ouvrent."
+        subtitle="Identité de l'agence et personnes qui y travaillent."
       />
       <div className="space-y-6">
         <BrandingForm

@@ -9,6 +9,7 @@ import {
   type PortalFormState,
 } from "@/app/actions/portal";
 import { CREDENTIAL_KIND_LABEL } from "@/components/credential-kind";
+import { StepIcon } from "@/components/step-icon";
 import { formatSize, Uploader } from "@/components/uploader";
 import { StepBadge, Tag } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,7 @@ export function PortalStep({
       >
         <span className="min-w-0">
           <span className="flex flex-wrap items-center gap-2">
+            <StepIcon kind={step.kind} />
             <span className="font-medium">{step.title}</span>
             <Tag>{KIND_LABEL[step.kind]}</Tag>
             <StepBadge status={step.status} />

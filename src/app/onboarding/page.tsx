@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/tenant";
-import { Wordmark } from "@/components/logo";
+import { AsideQuote, AuthShell } from "@/components/auth-shell";
 import { AgencyForm } from "./agency-form";
 
 export const metadata = { title: "Créer votre espace · Onbo" };
@@ -13,19 +13,21 @@ export default async function OnboardingPage() {
   if (existing > 0) redirect("/app");
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-sm">
-        <div className="mb-8">
-          <Wordmark />
-          <h1 className="mt-6 font-display text-3xl leading-tight">
-            Créez votre espace
-          </h1>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">
-            Un espace = une agence. Vous inviterez votre équipe ensuite.
-          </p>
-        </div>
-        <AgencyForm />
-      </div>
-    </main>
+    <AuthShell
+      title="Créez votre espace"
+      subtitle="Un espace correspond à une agence. Vous inviterez votre équipe juste après."
+      aside={
+        <AsideQuote
+          quote="Votre nom, vos couleurs. Vos clients ne verront jamais le nôtre."
+          points={[
+            "Logo et couleur appliqués au portail client",
+            "Directeurs de projet et membres, avec droits distincts",
+            "Chaque projet reste cloisonné",
+          ]}
+        />
+      }
+    >
+      <AgencyForm />
+    </AuthShell>
   );
 }
