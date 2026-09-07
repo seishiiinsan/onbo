@@ -16,10 +16,19 @@ export function isStale(step: { status: StepStatus; updatedAt: Date }) {
   return Date.now() - step.updatedAt.getTime() > STALE_DAYS * 86_400_000;
 }
 
-export function progressOf(steps: Pick<OnboardingStep, "status">[]) {
-  if (steps.length === 0) return 0;
-  const total = steps.reduce((sum, step) => sum + WEIGHT[step.status], 0);
-  return Math.round((total / steps.length) * 100);
+/**
+ * Avancement du projet.
+ * Les etapes optionnelles n'entrent pas dans le calcul (item 23) : les
+ * traiter est un bonus, pas une condition pour atteindre 100 %.
+ */
+export function progressOf(
+  steps: (Pick<OnboardingStep, "status"> & { required?: boolean })[],
+) {
+  const counted = steps.filter((step) => step.required !== false);
+  if (counted.length === 0) return 0;
+
+  const total = counted.reduce((sum, step) => sum + WEIGHT[step.status], 0);
+  return Math.round((total / counted.length) * 100);
 }
 
 export const STATUS_LABEL: Record<StepStatus, string> = {

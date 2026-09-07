@@ -1,3 +1,4 @@
+import { ZipArchive } from "archiver";
 import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resolvePortalToken } from "@/lib/portal";
@@ -6,39 +7,40 @@ import { readFileStream } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
-/** Telechargement d'un fichier : reserve a l'agence proprietaire ou au porteur du lien. */
+/** Telechargement groupe des fichiers d'une etape, en ZIP (item 22). */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ assetId: string }> },
+  { params }: { params: Promise<{ stepId: string }> },
 ) {
-  const { assetId } = await params;
+  const { stepId } = await params;
   const token = request.nextUrl.searchParams.get("token");
 
-  const asset = await prisma.asset.findUnique({
-    where: { id: assetId },
-    include: { step: { select: { projectId: true } } },
+  const step = await prisma.onboardingStep.findUnique({
+    where: { id: stepId },
+    include: { assets: true },
   });
-  if (!asset) return new NextResponse(null, { status: 404 });
+  if (!step) return new NextResponse(null, { status: 404 });
 
-  if (!(await canRead(asset.step.projectId, token))) {
+  if (!(await canRead(step.projectId, token))) {
     return new NextResponse(null, { status: 404 });
   }
+  if (step.assets.length === 0) {
+    return NextResponse.json({ error: "Aucun fichier." }, { status: 404 });
+  }
 
-  const stream = readFileStream(asset.storageKey);
+  const archive = new ZipArchive({ zlib: { level: 6 } });
 
-  // Les images peuvent s'afficher dans la page (apercu, item 21) ; tout le
-  // reste est force en telechargement.
-  const inline =
-    request.nextUrl.searchParams.get("inline") === "1" &&
-    asset.mimeType.startsWith("image/") &&
-    asset.mimeType !== "image/svg+xml";
+  for (const asset of step.assets) {
+    archive.append(readFileStream(asset.storageKey), { name: asset.filename });
+  }
+  void archive.finalize();
 
-  return new NextResponse(stream as unknown as ReadableStream, {
+  const filename = `${step.title.replace(/[^\w.\- ]+/g, "_")}.zip`;
+
+  return new NextResponse(archive as unknown as ReadableStream, {
     headers: {
-      "Content-Type": asset.mimeType,
-      "Content-Length": String(asset.size),
-      "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${asset.filename}"`,
-      // Contenu client : jamais mis en cache par un intermediaire.
+      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="${filename}"`,
       "Cache-Control": "private, no-store",
     },
   });

@@ -9,7 +9,7 @@
   --color-canvas: #f6f5f2;
   --color-surface: #ffffff;
   --color-ink: #16181d;
-  --color-muted: #6e7178;
+  --color-muted: #5c6067;
   --color-line: #e6e3dd;
   --color-line-strong: #d5d1c8;
 
@@ -36,6 +36,48 @@
   --sidebar-width: 15rem;
 }
 
+/*
+ * Mode sombre (item 49). Les valeurs claires sont definies sur :root ci-dessus ;
+ * seules les variables changent ici, aucun composant n'a de couleur en dur.
+ */
+@layer base {
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --color-canvas: #101216;
+      --color-surface: #171a1f;
+      --color-rail: #14171b;
+      --color-ink: #f2f1ee;
+      --color-muted: #a2a7af;
+      --color-line: #262a31;
+      --color-line-strong: #363b44;
+      --color-brand: #8f79ff;
+      --color-brand-ink: #b3a3ff;
+      --color-brand-soft: #24203a;
+      --color-progress-soft: #2b2312;
+      --color-submitted-soft: #16233d;
+      --color-validated-soft: #123026;
+      --color-danger: #ef6a5c;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --color-canvas: #101216;
+    --color-surface: #171a1f;
+    --color-rail: #14171b;
+    --color-ink: #f2f1ee;
+    --color-muted: #a2a7af;
+    --color-line: #262a31;
+    --color-line-strong: #363b44;
+    --color-brand: #8f79ff;
+    --color-brand-ink: #b3a3ff;
+    --color-brand-soft: #24203a;
+    --color-progress-soft: #2b2312;
+    --color-submitted-soft: #16233d;
+    --color-validated-soft: #123026;
+    --color-danger: #ef6a5c;
+  }
+}
+
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
@@ -58,6 +100,18 @@
 
   ::selection {
     background: var(--color-brand-soft);
+  }
+
+  /* Item 48 : aucune animation imposee a qui n'en veut pas. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 

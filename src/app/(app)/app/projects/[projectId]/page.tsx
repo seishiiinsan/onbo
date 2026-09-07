@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireProjectAccess } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
@@ -5,20 +6,37 @@ import { progressOf } from "@/lib/progress";
 import { requireTenant } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress";
+import { ActivityFeed } from "./activity-feed";
 import { AddStepForm } from "./add-step-form";
 import { ClientsPanel } from "./clients-panel";
 import { PortalPanel } from "./portal-panel";
 import { ProjectHeader } from "./project-header";
+import { ProjectToolbar } from "./project-toolbar";
 import { RemindersPanel } from "./reminders-panel";
+import { StepList } from "./step-list";
 import { ProjectTeamPanel } from "./team-panel";
-import { StepCard } from "./step-card";
 
-export const metadata = { title: "Projet · Onbo" };
-
-const dateFormat = new Intl.DateTimeFormat("fr-FR", {
+const dateTime = new Intl.DateTimeFormat("fr-FR", {
   dateStyle: "short",
   timeStyle: "short",
 });
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ projectId: string }>;
+}) {
+  const { projectId } = await params;
+  const ctx = await requireTenant();
+  await requireProjectAccess(ctx, projectId);
+
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { name: true },
+  });
+
+  return { title: project?.name ?? "Projet" };
+}
 
 export default async function ProjectPage({
   params,
@@ -42,6 +60,7 @@ export default async function ProjectPage({
             orderBy: { createdAt: "asc" },
             include: {
               accessLog: { orderBy: { at: "desc" }, take: 1 },
+              _count: { select: { accessLog: true } },
             },
           },
         },
@@ -53,6 +72,7 @@ export default async function ProjectPage({
         orderBy: { createdAt: "desc" },
         take: 1,
       },
+      activities: { orderBy: { createdAt: "desc" }, take: 12 },
     },
   });
 
@@ -60,9 +80,10 @@ export default async function ProjectPage({
 
   const progress = progressOf(project.steps);
   const activeLink = project.portalLinks[0] ?? null;
-  const awaiting = project.steps.filter(
+  const submitted = project.steps.filter(
     (step) => step.status === "SUBMITTED",
   ).length;
+  const optional = project.steps.filter((step) => !step.required).length;
 
   // Membres de l'agence affectables : ceux qui ne sont pas deja sur le projet.
   const assignable = access.canManageTeam
@@ -81,10 +102,27 @@ export default async function ProjectPage({
       }))
     : [];
 
+  const now = Date.now();
+
   return (
     <>
+      <nav aria-label="Fil d'Ariane" className="mb-2 text-xs text-[var(--color-muted)]">
+        <Link href="/app" className="focusable rounded underline-offset-2 hover:underline">
+          Projets
+        </Link>
+        <span aria-hidden> / </span>
+        <span className="text-[var(--color-ink)]">{project.name}</span>
+      </nav>
+
       <ProjectHeader
         project={{ id: project.id, name: project.name, status: project.status }}
+        canEdit={access.canEdit}
+      />
+
+      <ProjectToolbar
+        projectId={project.id}
+        submittedCount={submitted}
+        dueDate={project.dueDate ? project.dueDate.toISOString().slice(0, 10) : ""}
         canEdit={access.canEdit}
       />
 
@@ -93,15 +131,14 @@ export default async function ProjectPage({
           <ProgressBar value={progress} />
         </div>
         <p className="text-sm text-[var(--color-muted)]">
-          <span className="font-medium text-[var(--color-ink)]">
-            {progress}%
-          </span>{" "}
+          <span className="font-medium text-[var(--color-ink)]">{progress}%</span>{" "}
           · {project.steps.length} étape(s)
-          {awaiting > 0 && (
+          {optional > 0 && ` (dont ${optional} optionnelle(s))`}
+          {submitted > 0 && (
             <>
               {" · "}
               <span className="text-[var(--color-submitted)]">
-                {awaiting} en attente de validation
+                {submitted} en attente de validation
               </span>
             </>
           )}
@@ -110,46 +147,51 @@ export default async function ProjectPage({
 
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         <div>
-          <ul className="grid gap-2.5">
-            {project.steps.map((step) => (
-              <StepCard
-                key={step.id}
-                step={{
-                  id: step.id,
-                  title: step.title,
-                  description: step.description,
-                  kind: step.kind,
-                  status: step.status,
-                  assets: step.assets.map((asset) => ({
-                    id: asset.id,
-                    filename: asset.filename,
-                    size: asset.size,
-                    uploadedByClient: asset.uploadedByClient,
-                  })),
-                  canEdit: access.canEdit,
-                  canViewCredentials: access.canViewCredentials,
-                  credentials: step.credentials.map((credential) => ({
-                    id: credential.id,
-                    label: credential.label,
-                    kind: credential.kind,
-                    username: credential.username,
-                    url: credential.url,
-                    lastAccess: credential.accessLog[0]
-                      ? dateFormat.format(credential.accessLog[0].at)
-                      : null,
-                  })),
-                  comments: step.comments.map((comment) => ({
-                    id: comment.id,
-                    body: comment.body,
-                    author: comment.author,
-                    authorName: comment.authorName,
-                    internal: comment.internal,
-                    at: dateFormat.format(comment.createdAt),
-                  })),
-                }}
-              />
-            ))}
-          </ul>
+          <StepList
+            projectId={project.id}
+            canEdit={access.canEdit}
+            steps={project.steps.map((step) => ({
+              id: step.id,
+              projectId: project.id,
+              title: step.title,
+              description: step.description,
+              kind: step.kind,
+              status: step.status,
+              required: step.required,
+              blockedNote: step.blockedNote,
+              canEdit: access.canEdit,
+              canViewCredentials: access.canViewCredentials,
+              assets: step.assets.map((asset) => ({
+                id: asset.id,
+                filename: asset.filename,
+                mimeType: asset.mimeType,
+                size: asset.size,
+                uploadedByClient: asset.uploadedByClient,
+              })),
+              credentials: step.credentials.map((credential) => ({
+                id: credential.id,
+                label: credential.label,
+                kind: credential.kind,
+                username: credential.username,
+                url: credential.url,
+                accessCount: credential._count.accessLog,
+                lastAccess: credential.accessLog[0]
+                  ? dateTime.format(credential.accessLog[0].at)
+                  : null,
+                ageDays: Math.floor(
+                  (now - credential.createdAt.getTime()) / 86_400_000,
+                ),
+              })),
+              comments: step.comments.map((comment) => ({
+                id: comment.id,
+                body: comment.body,
+                author: comment.author,
+                authorName: comment.authorName,
+                internal: comment.internal,
+                at: dateTime.format(comment.createdAt),
+              })),
+            }))}
+          />
 
           {access.canEdit && (
             <Card className="mt-4">
@@ -177,26 +219,25 @@ export default async function ProjectPage({
               }))}
             />
           )}
+
           <PortalPanel
             projectId={project.id}
             hasActiveLink={Boolean(activeLink)}
             activeUrl={activeLink ? `/p/${activeLink.token}` : null}
             lastUsedAt={
-              activeLink?.lastUsedAt
-                ? dateFormat.format(activeLink.lastUsedAt)
-                : null
+              activeLink?.lastUsedAt ? dateTime.format(activeLink.lastUsedAt) : null
             }
           />
+
           <RemindersPanel
             projectId={project.id}
             enabled={project.remindersEnabled}
             days={project.reminderDays}
             lastReminderAt={
-              project.lastReminderAt
-                ? dateFormat.format(project.lastReminderAt)
-                : null
+              project.lastReminderAt ? dateTime.format(project.lastReminderAt) : null
             }
           />
+
           <ClientsPanel
             projectId={project.id}
             links={project.clients.map((link) => ({
@@ -204,6 +245,17 @@ export default async function ProjectPage({
               email: link.client.email,
               name: link.client.name,
               company: link.client.company,
+            }))}
+          />
+
+          <ActivityFeed
+            entries={project.activities.map((activity) => ({
+              id: activity.id,
+              actor: activity.actor,
+              actorName: activity.actorName,
+              action: activity.action,
+              detail: activity.detail,
+              at: dateTime.format(activity.createdAt),
             }))}
           />
         </div>

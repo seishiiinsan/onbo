@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import type { ProjectStatus, StepKind, StepStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { projectScope, requireProjectEdit } from "@/lib/access";
+import { logActivity } from "@/lib/activity";
 import { issuePortalLink, revokePortalLinks } from "@/lib/portal";
 import { requireTenant, type TenantContext } from "@/lib/tenant";
 
@@ -154,7 +155,19 @@ export async function setStepStatus(stepId: string, status: StepStatus) {
   const ctx = await requireTenant();
   const { step } = await requireStepEdit(ctx, stepId);
 
-  await prisma.onboardingStep.update({ where: { id: step.id }, data: { status } });
+  const updated = await prisma.onboardingStep.update({
+    where: { id: step.id },
+    data: { status },
+  });
+
+  await logActivity({
+    projectId: step.projectId,
+    actor: "AGENCY",
+    actorName: ctx.email,
+    action:
+      status === "VALIDATED" ? "a validé une étape" : "a changé le statut d'une étape",
+    detail: updated.title,
+  });
   revalidatePath(`/app/projects/${step.projectId}`);
   revalidatePath("/app");
 }
@@ -254,4 +267,167 @@ export async function updateReminders(
 
   revalidatePath(`/app/projects/${project.id}`);
   return {};
+}
+
+/** Edition d'une etape existante, sans passer par suppression/recreation (item 19). */
+export async function updateStep(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const ctx = await requireTenant();
+  const { step } = await requireStepEdit(ctx, String(formData.get("stepId")));
+
+  const title = String(formData.get("title") ?? "").trim();
+  if (title.length < 2) return { error: "Titre d'étape trop court." };
+
+  await prisma.onboardingStep.update({
+    where: { id: step.id },
+    data: {
+      title,
+      description: String(formData.get("description") ?? "").trim() || null,
+      kind: String(formData.get("kind") ?? "OTHER") as StepKind,
+      required: formData.get("required") === "on",
+    },
+  });
+
+  revalidatePath(`/app/projects/${step.projectId}`);
+  return {};
+}
+
+/**
+ * Marque une etape comme bloquee, avec un motif visible du client (item 24).
+ * Un motif vide leve le blocage.
+ */
+export async function setStepBlocked(stepId: string, note: string) {
+  const ctx = await requireTenant();
+  const { step } = await requireStepEdit(ctx, stepId);
+  const trimmed = note.trim();
+
+  const updated = await prisma.onboardingStep.update({
+    where: { id: step.id },
+    data: { blockedNote: trimmed || null },
+  });
+
+  await logActivity({
+    projectId: step.projectId,
+    actor: "AGENCY",
+    actorName: ctx.email,
+    action: trimmed ? "a signalé un blocage" : "a levé un blocage",
+    detail: updated.title,
+  });
+
+  revalidatePath(`/app/projects/${step.projectId}`);
+}
+
+/** Reordonne les etapes d'un projet (item 16). */
+export async function reorderSteps(projectId: string, orderedIds: string[]) {
+  const ctx = await requireTenant();
+  const { project } = await scopedProject(projectId);
+
+  // On ne reordonne que des etapes appartenant reellement au projet.
+  const owned = await prisma.onboardingStep.findMany({
+    where: { projectId: project.id },
+    select: { id: true },
+  });
+  const ownedIds = new Set(owned.map((step) => step.id));
+  const valid = orderedIds.filter((id) => ownedIds.has(id));
+
+  await prisma.$transaction(
+    valid.map((id, index) =>
+      prisma.onboardingStep.update({ where: { id }, data: { position: index } }),
+    ),
+  );
+
+  await logActivity({
+    projectId: project.id,
+    actor: "AGENCY",
+    actorName: ctx.email,
+    action: "a réordonné la checklist",
+  });
+
+  revalidatePath(`/app/projects/${project.id}`);
+}
+
+/** Valide d'un coup toutes les etapes soumises (item 17). */
+export async function validateAllSubmitted(projectId: string) {
+  const ctx = await requireTenant();
+  const { project } = await scopedProject(projectId);
+
+  const { count } = await prisma.onboardingStep.updateMany({
+    where: { projectId: project.id, status: "SUBMITTED" },
+    data: { status: "VALIDATED" },
+  });
+
+  if (count > 0) {
+    await logActivity({
+      projectId: project.id,
+      actor: "AGENCY",
+      actorName: ctx.email,
+      action: `a validé ${count} étape(s) d'un coup`,
+    });
+  }
+
+  revalidatePath(`/app/projects/${project.id}`);
+  revalidatePath("/app");
+  return count;
+}
+
+/** Duplique un projet : structure des etapes, sans les donnees client (item 20). */
+export async function duplicateProject(projectId: string) {
+  const ctx = await requireTenant();
+  const { project } = await scopedProject(projectId);
+
+  const steps = await prisma.onboardingStep.findMany({
+    where: { projectId: project.id },
+    orderBy: { position: "asc" },
+  });
+
+  const copy = await prisma.project.create({
+    data: {
+      name: `${project.name} (copie)`,
+      agencyId: ctx.agencyId,
+      status: "DRAFT",
+      reminderDays: project.reminderDays,
+      remindersEnabled: project.remindersEnabled,
+      members: {
+        create: { userId: ctx.userId, role: "LEAD", canViewCredentials: true },
+      },
+      steps: {
+        create: steps.map((step) => ({
+          title: step.title,
+          description: step.description,
+          kind: step.kind,
+          position: step.position,
+          required: step.required,
+        })),
+      },
+    },
+  });
+
+  redirect(`/app/projects/${copy.id}`);
+}
+
+/** Echeance annoncee au client (item 10). */
+export async function setDueDate(projectId: string, value: string) {
+  const ctx = await requireTenant();
+  const { project } = await scopedProject(projectId);
+
+  const dueDate = value ? new Date(value) : null;
+  if (dueDate && Number.isNaN(dueDate.getTime())) return;
+
+  await prisma.project.update({
+    where: { id: project.id },
+    data: { dueDate },
+  });
+
+  await logActivity({
+    projectId: project.id,
+    actor: "AGENCY",
+    actorName: ctx.email,
+    action: dueDate ? "a fixé une échéance" : "a retiré l'échéance",
+    detail: dueDate?.toLocaleDateString("fr-FR"),
+  });
+
+  revalidatePath(`/app/projects/${project.id}`);
+  revalidatePath("/app");
 }

@@ -135,6 +135,8 @@ model Project {
   reminderDays     Int           @default(3)
   /// Garde-fou anti-spam : une relance par projet et par fenetre.
   lastReminderAt   DateTime?
+  /// Echeance annoncee au client (item 10).
+  dueDate          DateTime?
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
@@ -143,6 +145,7 @@ model Project {
   steps       OnboardingStep[]
   portalLinks PortalLink[]
   members     ProjectMember[]
+  activities  Activity[]
 
   @@index([agencyId])
 }
@@ -199,6 +202,12 @@ model ClientProject {
   @@index([projectId])
 }
 
+enum ActivityActor {
+  AGENCY
+  CLIENT
+  SYSTEM
+}
+
 enum CommentAuthor {
   AGENCY
   CLIENT
@@ -211,6 +220,22 @@ enum CredentialKind {
   SOCIAL
   ANALYTICS
   OTHER
+}
+
+/// Journal d'activite d'un projet (item 18) : qui a fait quoi, quand.
+/// Alimente le fil visible cote agence et sert de trace en cas de litige.
+model Activity {
+  id        String        @id @default(cuid())
+  projectId String
+  actor     ActivityActor
+  actorName String?
+  action    String
+  detail    String?
+  createdAt DateTime      @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, createdAt])
 }
 
 /// Fil de discussion d'une etape. Une note interne n'est jamais servie au portail.
@@ -283,6 +308,10 @@ model OnboardingStep {
   kind        StepKind   @default(OTHER)
   status      StepStatus @default(PENDING)
   position    Int        @default(0)
+  /// Une etape optionnelle ne pese pas dans l'avancement (item 23).
+  required    Boolean    @default(true)
+  /// Motif de blocage, visible aussi par le client (item 24).
+  blockedNote String?
   projectId   String
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
