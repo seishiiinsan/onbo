@@ -60,6 +60,13 @@ export async function consumeLoginToken(token: string) {
   return createSession(user.id);
 }
 
+/**
+ * Ouvre une session et retourne le cookie a poser.
+ *
+ * Le cookie n'est pas ecrit ici : dans un Route Handler qui renvoie une
+ * redirection, les mutations via cookies() ne sont pas reprises par la
+ * reponse. L'appelant pose le cookie sur SA reponse (cf. sessionCookie).
+ */
 export async function createSession(userId: string) {
   const token = newToken();
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 86_400_000);
@@ -68,16 +75,20 @@ export async function createSession(userId: string) {
     data: { tokenHash: hash(token), userId, expiresAt },
   });
 
-  const jar = await cookies();
-  jar.set(SESSION_COOKIE, token, {
+  return { userId, token, expiresAt };
+}
+
+/** Options du cookie de session, partagees entre tous les points d'ecriture. */
+export function sessionCookie(token: string, expiresAt: Date) {
+  return {
+    name: SESSION_COOKIE,
+    value: token,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
     expires: expiresAt,
-  });
-
-  return { userId, expiresAt };
+  };
 }
 
 /** Utilisateur connecte, ou null. */

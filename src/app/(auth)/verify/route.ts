@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { consumeLoginToken } from "@/lib/auth";
+import { consumeLoginToken, sessionCookie } from "@/lib/auth";
 
 /**
  * Consommation du lien magique.
@@ -17,6 +17,13 @@ export async function GET(request: NextRequest) {
   const base =
     process.env.APP_URL ?? (host ? `http://${host}` : request.nextUrl.origin);
 
-  const target = session ? "/app" : "/login?error=link";
-  return NextResponse.redirect(new URL(target, base));
+  if (!session) {
+    return NextResponse.redirect(new URL("/login?error=link", base));
+  }
+
+  // Le cookie est pose sur cette reponse : une mutation via cookies() serait
+  // perdue sur une redirection.
+  const response = NextResponse.redirect(new URL("/app", base));
+  response.cookies.set(sessionCookie(session.token, session.expiresAt));
+  return response;
 }
