@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Valeur factice : aucun acces base en CI, mais Prisma exige la variable.
+      DATABASE_URL: postgresql://onbo:onbo@localhost:5432/onbo?schema=public
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
