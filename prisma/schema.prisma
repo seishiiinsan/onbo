@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum StepStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  VALIDATED
+}
+
+enum StepKind {
+  ASSETS
+  ACCESS
+  BRIEF
+  CONTENT
+  OTHER
+}
+
+/// Tenant payant.
+model Agency {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+  projects    Project[]
+}
+
+/// Staff agence.
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+}
+
+model Membership {
+  id       String         @id @default(cuid())
+  role     MembershipRole @default(MEMBER)
+  userId   String
+  agencyId String
+  joinedAt DateTime       @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, agencyId])
+  @@index([agencyId])
+}
+
+/// Identite portable : un email global, N espaces agence.
+model Client {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  company   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projects ClientProject[]
+}
+
+/// Un onboarding / un site, appartient a une agence.
+model Project {
+  id        String        @id @default(cuid())
+  name      String
+  status    ProjectStatus @default(DRAFT)
+  agencyId  String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  agency  Agency          @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clients ClientProject[]
+  steps   OnboardingStep[]
+
+  @@index([agencyId])
+}
+
+/// Pivot : quel client voit quel projet.
+model ClientProject {
+  id        String   @id @default(cuid())
+  clientId  String
+  projectId String
+  createdAt DateTime @default(now())
+
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, projectId])
+  @@index([projectId])
+}
+
+model OnboardingStep {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  kind        StepKind   @default(OTHER)
+  status      StepStatus @default(PENDING)
+  position    Int        @default(0)
+  projectId   String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
