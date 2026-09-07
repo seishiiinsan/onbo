@@ -1,6 +1,10 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { progressOf, PROJECT_STATUS_LABEL } from "@/lib/progress";
 import { requireTenant } from "@/lib/tenant";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ProgressBar } from "@/components/progress-bar";
 
 export const metadata = { title: "Projets · Onbo" };
 
@@ -9,9 +13,12 @@ export default async function DashboardPage() {
 
   // Toute lecture produit est filtree par agencyId (issue #6).
   const projects = await prisma.project.findMany({
-    where: { agencyId: ctx.agencyId },
-    orderBy: { createdAt: "desc" },
-    include: { _count: { select: { steps: true, clients: true } } },
+    where: { agencyId: ctx.agencyId, status: { not: "ARCHIVED" } },
+    orderBy: { updatedAt: "desc" },
+    include: {
+      steps: { select: { status: true } },
+      _count: { select: { clients: true } },
+    },
   });
 
   return (
@@ -23,6 +30,9 @@ export default async function DashboardPage() {
             Un projet = un onboarding client.
           </p>
         </div>
+        <Link href="/app/projects/new">
+          <Button variant="accent">Nouveau projet</Button>
+        </Link>
       </div>
 
       {projects.length === 0 ? (
@@ -30,26 +40,34 @@ export default async function DashboardPage() {
           <CardContent className="py-10 text-center">
             <p className="text-sm font-medium">Aucun projet pour l&apos;instant.</p>
             <p className="mt-1 text-sm text-[var(--color-muted)]">
-              La création de projets arrive avec l&apos;issue #8.
+              Créez-en un : la checklist par défaut est prête.
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-3">
-          {projects.map((project) => (
-            <Card key={project.id}>
-              <CardHeader className="flex items-center justify-between">
-                <CardTitle>{project.name}</CardTitle>
-                <span className="text-xs text-[var(--color-muted)]">
-                  {project.status}
-                </span>
-              </CardHeader>
-              <CardContent className="text-sm text-[var(--color-muted)]">
-                {project._count.steps} étape(s) · {project._count.clients}{" "}
-                client(s)
-              </CardContent>
-            </Card>
-          ))}
+          {projects.map((project) => {
+            const progress = progressOf(project.steps);
+            return (
+              <Link key={project.id} href={`/app/projects/${project.id}`}>
+                <Card className="transition-shadow hover:shadow-md">
+                  <CardContent>
+                    <div className="mb-2 flex items-baseline justify-between gap-4">
+                      <span className="font-medium">{project.name}</span>
+                      <span className="shrink-0 text-xs text-[var(--color-muted)]">
+                        {PROJECT_STATUS_LABEL[project.status]} ·{" "}
+                        {project._count.clients} contact(s)
+                      </span>
+                    </div>
+                    <ProgressBar value={progress} />
+                    <p className="mt-2 text-xs text-[var(--color-muted)]">
+                      {progress}% · {project.steps.length} étape(s)
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </>
