@@ -78,13 +78,19 @@ export async function createSession(userId: string) {
   return { userId, token, expiresAt };
 }
 
-/** Options du cookie de session, partagees entre tous les points d'ecriture. */
+/**
+ * Options du cookie de session, partagees entre tous les points d'ecriture.
+ *
+ * secure est indexe sur APP_URL, pas sur NODE_ENV : un deploiement en HTTP
+ * (VPS sans domaine) verrait sinon le navigateur jeter le cookie. A retirer
+ * une fois HTTPS en place (issue #3).
+ */
 export function sessionCookie(token: string, expiresAt: Date) {
   return {
     name: SESSION_COOKIE,
     value: token,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: (process.env.APP_URL ?? "").startsWith("https://"),
     sameSite: "lax" as const,
     path: "/",
     expires: expiresAt,
