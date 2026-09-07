@@ -22,9 +22,10 @@ const STATUSES: { value: ProjectStatus; label: string }[] = [
 
 type Props = {
   project: { id: string; name: string; status: ProjectStatus };
+  canEdit: boolean;
 };
 
-export function ProjectHeader({ project }: Props) {
+export function ProjectHeader({ project, canEdit }: Props) {
   const [editing, setEditing] = useState(false);
   const [state, action, pending] = useActionState(renameProject, initial);
   const [statusPending, startTransition] = useTransition();
@@ -39,7 +40,7 @@ export function ProjectHeader({ project }: Props) {
       </Link>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-        {editing ? (
+        {editing && canEdit ? (
           <form
             action={(formData) => {
               action(formData);
@@ -71,19 +72,21 @@ export function ProjectHeader({ project }: Props) {
             <h1 className="font-display text-3xl leading-tight">
               {project.name}
             </h1>
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="text-xs text-[var(--color-muted)] underline-offset-2 hover:underline"
-            >
-              renommer
-            </button>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="text-xs text-[var(--color-muted)] underline-offset-2 hover:underline"
+              >
+                renommer
+              </button>
+            )}
           </div>
         )}
 
         <Select
           value={project.status}
-          disabled={statusPending}
+          disabled={statusPending || !canEdit}
           onChange={(event) => {
             const next = event.target.value as ProjectStatus;
             startTransition(() => {

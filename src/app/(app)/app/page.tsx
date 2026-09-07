@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { projectScope } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { progressOf, STALE_DAYS, isStale } from "@/lib/progress";
 import { requireTenant } from "@/lib/tenant";
@@ -27,7 +28,7 @@ export default async function DashboardPage({
 
   // Toute lecture produit est bornee a l'agencyId de la session (issue #6).
   const projects = await prisma.project.findMany({
-    where: { agencyId: ctx.agencyId, status: { not: "ARCHIVED" } },
+    where: { ...projectScope(ctx), status: { not: "ARCHIVED" } },
     orderBy: { updatedAt: "desc" },
     include: {
       steps: { select: { status: true, updatedAt: true } },

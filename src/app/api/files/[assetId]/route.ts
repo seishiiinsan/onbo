@@ -49,7 +49,16 @@ async function canRead(projectId: string, token: string | null) {
   const project = await prisma.project.findFirst({
     where: {
       id: projectId,
-      agency: { memberships: { some: { userId: user.id } } },
+      OR: [
+        {
+          agency: {
+            memberships: {
+              some: { userId: user.id, role: { in: ["OWNER", "ADMIN"] } },
+            },
+          },
+        },
+        { members: { some: { userId: user.id } } },
+      ],
     },
     select: { id: true },
   });

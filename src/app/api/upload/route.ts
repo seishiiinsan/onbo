@@ -76,10 +76,23 @@ async function authorizeStep(stepId: string, token: string) {
   const user = await getCurrentUser();
   if (!user) return null;
 
+  // Meme regle que dans l'app : acces agence pour OWNER/ADMIN, projets
+  // affectes pour un MEMBER (issue #29).
   return prisma.onboardingStep.findFirst({
     where: {
       id: stepId,
-      project: { agency: { memberships: { some: { userId: user.id } } } },
+      project: {
+        OR: [
+          {
+            agency: {
+              memberships: {
+                some: { userId: user.id, role: { in: ["OWNER", "ADMIN"] } },
+              },
+            },
+          },
+          { members: { some: { userId: user.id, role: { not: "VIEWER" } } } },
+        ],
+      },
     },
     select: { id: true },
   });

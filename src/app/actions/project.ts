@@ -4,25 +4,38 @@ import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 import type { ProjectStatus, StepKind, StepStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { projectScope, requireProjectEdit } from "@/lib/access";
 import { issuePortalLink, revokePortalLinks } from "@/lib/portal";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenant, type TenantContext } from "@/lib/tenant";
 
 export type FormState = { error?: string };
 
 /**
- * Charge un projet en verifiant qu'il appartient bien a l'agence de la
- * session. Hors perimetre -> 404, sans revelation d'existence (issue #6).
+ * Charge un projet en verifiant les droits d'ecriture de la session : agence
+ * proprietaire, et affectation pour un simple membre (issues #6 et #29).
  */
 async function scopedProject(projectId: string) {
   const ctx = await requireTenant();
-  const project = await prisma.project.findFirst({
-    where: { id: projectId, agencyId: ctx.agencyId },
+  const access = await requireProjectEdit(ctx, projectId);
+  const project = await prisma.project.findUniqueOrThrow({
+    where: { id: access.projectId },
   });
-  if (!project) notFound();
-  return { ctx, project };
+  return { ctx, project, access };
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Etape accessible en ecriture par la session. */
+async function requireStepEdit(ctx: TenantContext, stepId: string) {
+  const step = await prisma.onboardingStep.findFirst({
+    where: { id: stepId, project: projectScope(ctx) },
+    select: { id: true, projectId: true },
+  });
+  if (!step) notFound();
+
+  await requireProjectEdit(ctx, step.projectId);
+  return { step };
+}
 
 /** Etapes creees par defaut : les 4 familles du brief. */
 const DEFAULT_STEPS: { title: string; kind: StepKind; description: string }[] = [
@@ -63,6 +76,15 @@ export async function createProject(
       name,
       agencyId: ctx.agencyId,
       status: "ACTIVE",
+      // Le createur est affecte responsable, sinon un MEMBER perdrait
+      // l'acces au projet qu'il vient de creer.
+      members: {
+        create: {
+          userId: ctx.userId,
+          role: "LEAD",
+          canViewCredentials: true,
+        },
+      },
       steps: withDefaults
         ? {
             create: DEFAULT_STEPS.map((step, index) => ({
@@ -130,13 +152,7 @@ export async function addStep(
 
 export async function setStepStatus(stepId: string, status: StepStatus) {
   const ctx = await requireTenant();
-
-  // La jointure sur agencyId empeche d'agir sur l'etape d'une autre agence.
-  const step = await prisma.onboardingStep.findFirst({
-    where: { id: stepId, project: { agencyId: ctx.agencyId } },
-    select: { id: true, projectId: true },
-  });
-  if (!step) notFound();
+  const { step } = await requireStepEdit(ctx, stepId);
 
   await prisma.onboardingStep.update({ where: { id: step.id }, data: { status } });
   revalidatePath(`/app/projects/${step.projectId}`);
@@ -145,11 +161,7 @@ export async function setStepStatus(stepId: string, status: StepStatus) {
 
 export async function deleteStep(stepId: string) {
   const ctx = await requireTenant();
-  const step = await prisma.onboardingStep.findFirst({
-    where: { id: stepId, project: { agencyId: ctx.agencyId } },
-    select: { id: true, projectId: true },
-  });
-  if (!step) notFound();
+  const { step } = await requireStepEdit(ctx, stepId);
 
   await prisma.onboardingStep.delete({ where: { id: step.id } });
   revalidatePath(`/app/projects/${step.projectId}`);
@@ -196,10 +208,11 @@ export async function attachClient(
 export async function detachClient(clientProjectId: string) {
   const ctx = await requireTenant();
   const link = await prisma.clientProject.findFirst({
-    where: { id: clientProjectId, project: { agencyId: ctx.agencyId } },
+    where: { id: clientProjectId, project: projectScope(ctx) },
     select: { id: true, projectId: true },
   });
   if (!link) notFound();
+  await requireProjectEdit(ctx, link.projectId);
 
   await prisma.clientProject.delete({ where: { id: link.id } });
   revalidatePath(`/app/projects/${link.projectId}`);

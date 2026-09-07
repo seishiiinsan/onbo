@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { requireProjectAccess } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { progressOf } from "@/lib/progress";
 import { requireTenant } from "@/lib/tenant";
@@ -9,6 +10,7 @@ import { ClientsPanel } from "./clients-panel";
 import { PortalPanel } from "./portal-panel";
 import { ProjectHeader } from "./project-header";
 import { RemindersPanel } from "./reminders-panel";
+import { ProjectTeamPanel } from "./team-panel";
 import { StepCard } from "./step-card";
 
 export const metadata = { title: "Projet · Onbo" };
@@ -25,10 +27,11 @@ export default async function ProjectPage({
 }) {
   const { projectId } = await params;
   const ctx = await requireTenant();
+  // Projet hors agence, ou membre non affecte : 404 dans les deux cas.
+  const access = await requireProjectAccess(ctx, projectId);
 
-  // findFirst + agencyId : un projet d'une autre agence est un 404.
   const project = await prisma.project.findFirst({
-    where: { id: projectId, agencyId: ctx.agencyId },
+    where: { id: projectId },
     include: {
       steps: {
         orderBy: { position: "asc" },
@@ -44,6 +47,7 @@ export default async function ProjectPage({
         },
       },
       clients: { include: { client: true }, orderBy: { createdAt: "asc" } },
+      members: { include: { user: true }, orderBy: { createdAt: "asc" } },
       portalLinks: {
         where: { revokedAt: null },
         orderBy: { createdAt: "desc" },
@@ -60,10 +64,28 @@ export default async function ProjectPage({
     (step) => step.status === "SUBMITTED",
   ).length;
 
+  // Membres de l'agence affectables : ceux qui ne sont pas deja sur le projet.
+  const assignable = access.canManageTeam
+    ? (
+        await prisma.membership.findMany({
+          where: {
+            agencyId: ctx.agencyId,
+            user: { projectMembers: { none: { projectId: project.id } } },
+          },
+          include: { user: true },
+          orderBy: { joinedAt: "asc" },
+        })
+      ).map((membership) => ({
+        userId: membership.userId,
+        email: membership.user.email,
+      }))
+    : [];
+
   return (
     <>
       <ProjectHeader
         project={{ id: project.id, name: project.name, status: project.status }}
+        canEdit={access.canEdit}
       />
 
       <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -104,6 +126,8 @@ export default async function ProjectPage({
                     size: asset.size,
                     uploadedByClient: asset.uploadedByClient,
                   })),
+                  canEdit: access.canEdit,
+                  canViewCredentials: access.canViewCredentials,
                   credentials: step.credentials.map((credential) => ({
                     id: credential.id,
                     label: credential.label,
@@ -127,17 +151,32 @@ export default async function ProjectPage({
             ))}
           </ul>
 
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle>Ajouter une étape</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AddStepForm projectId={project.id} />
-            </CardContent>
-          </Card>
+          {access.canEdit && (
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>Ajouter une étape</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AddStepForm projectId={project.id} />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-6">
+          {access.canManageTeam && (
+            <ProjectTeamPanel
+              projectId={project.id}
+              assignable={assignable}
+              assignments={project.members.map((member) => ({
+                id: member.id,
+                userId: member.userId,
+                email: member.user.email,
+                role: member.role,
+                canViewCredentials: member.canViewCredentials,
+              }))}
+            />
+          )}
           <PortalPanel
             projectId={project.id}
             hasActiveLink={Boolean(activeLink)}

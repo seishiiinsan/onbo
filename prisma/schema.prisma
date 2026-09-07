@@ -7,10 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// Role dans l'agence.
+/// OWNER et ADMIN (directeur de projet) voient tout l'espace ; MEMBER ne voit
+/// que les projets ou il est explicitement affecte.
 enum MembershipRole {
   OWNER
   ADMIN
   MEMBER
+}
+
+/// Role sur un projet donne, pour les membres affectes.
+enum ProjectRole {
+  LEAD
+  CONTRIBUTOR
+  VIEWER
 }
 
 enum ProjectStatus {
@@ -57,8 +67,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships Membership[]
-  sessions    Session[]
+  memberships    Membership[]
+  sessions       Session[]
+  projectMembers ProjectMember[]
 }
 
 /// Lien magique a usage unique (connexion staff).
@@ -131,8 +142,28 @@ model Project {
   clients     ClientProject[]
   steps       OnboardingStep[]
   portalLinks PortalLink[]
+  members     ProjectMember[]
 
   @@index([agencyId])
+}
+
+/// Affectation d'un membre a un projet.
+///
+/// L'acces au coffre d'acces est decide affectation par affectation : un dev
+/// peut travailler sur un projet sans voir les mots de passe du client.
+model ProjectMember {
+  id                 String      @id @default(cuid())
+  userId             String
+  projectId          String
+  role               ProjectRole @default(CONTRIBUTOR)
+  canViewCredentials Boolean     @default(false)
+  createdAt          DateTime    @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@index([projectId])
 }
 
 /// Lien magique donnant acces au portail d'un projet.

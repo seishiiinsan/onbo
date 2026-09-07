@@ -28,6 +28,9 @@ export type StepCardData = {
   description: string | null;
   kind: keyof typeof KIND_LABEL;
   status: StepStatus;
+  /** Droits de la session sur le projet (issue #29). */
+  canEdit: boolean;
+  canViewCredentials: boolean;
   assets: {
     id: string;
     filename: string;
@@ -87,7 +90,7 @@ export function StepCard({ step }: { step: StepCardData }) {
         </button>
 
         <div className="flex shrink-0 items-center gap-2">
-          {step.status === "SUBMITTED" && (
+          {step.canEdit && step.status === "SUBMITTED" && (
             <Button
               size="sm"
               variant="accent"
@@ -101,7 +104,9 @@ export function StepCard({ step }: { step: StepCardData }) {
               Valider
             </Button>
           )}
-          {step.status === "VALIDATED" ? (
+          {!step.canEdit ? (
+            <StepBadge status={step.status} />
+          ) : step.status === "VALIDATED" ? (
             <Button
               size="sm"
               variant="ghost"
@@ -138,24 +143,38 @@ export function StepCard({ step }: { step: StepCardData }) {
       {open && (
         <div className="grid gap-6 border-t border-[var(--color-line)] p-4 md:grid-cols-2">
           <Files step={step} />
-          <Credentials step={step} />
+          {step.canViewCredentials ? (
+            <Credentials step={step} />
+          ) : (
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)]">
+                Accès
+              </h3>
+              <p className="text-sm text-[var(--color-muted)]">
+                {step.credentials.length} accès transmis, réservés aux personnes
+                habilitées sur ce projet.
+              </p>
+            </section>
+          )}
           <div className="md:col-span-2">
             <Comments step={step} />
           </div>
-          <div className="md:col-span-2">
-            <Button
-              size="sm"
-              variant="danger"
-              disabled={pending}
-              onClick={() =>
-                startTransition(() => {
-                  void deleteStep(step.id);
-                })
-              }
-            >
-              Supprimer l&apos;étape
-            </Button>
-          </div>
+          {step.canEdit && (
+            <div className="md:col-span-2">
+              <Button
+                size="sm"
+                variant="danger"
+                disabled={pending}
+                onClick={() =>
+                  startTransition(() => {
+                    void deleteStep(step.id);
+                  })
+                }
+              >
+                Supprimer l&apos;étape
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </li>
@@ -213,7 +232,7 @@ function Files({ step }: { step: StepCardData }) {
           ))}
         </ul>
       )}
-      <Uploader stepId={step.id} />
+      {step.canEdit && <Uploader stepId={step.id} />}
     </section>
   );
 }
@@ -389,6 +408,7 @@ function Comments({ step }: { step: StepCardData }) {
         </ul>
       )}
 
+      {!step.canEdit ? null : (
       <form action={action}>
         <input type="hidden" name="stepId" value={step.id} />
         <Textarea name="body" placeholder="Écrire au client…" required />
@@ -405,6 +425,7 @@ function Comments({ step }: { step: StepCardData }) {
           <p className="mt-1 text-sm text-[var(--color-danger)]">{state.error}</p>
         )}
       </form>
+      )}
     </section>
   );
 }

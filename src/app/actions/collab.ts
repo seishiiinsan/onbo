@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 import type { CredentialKind } from "@prisma/client";
+import { projectScope, requireStepAccess } from "@/lib/access";
 import { open, seal, MissingEncryptionKey } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
 import { removeFile } from "@/lib/storage";
@@ -10,15 +11,12 @@ import { requireTenant } from "@/lib/tenant";
 
 export type FormState = { error?: string };
 
-/** Etape appartenant a l'agence de la session, sinon 404 (issue #6). */
+/** Etape accessible en ecriture par la session, sinon 404 (issues #6 et #29). */
 async function scopedStep(stepId: string) {
   const ctx = await requireTenant();
-  const step = await prisma.onboardingStep.findFirst({
-    where: { id: stepId, project: { agencyId: ctx.agencyId } },
-    select: { id: true, projectId: true },
-  });
-  if (!step) notFound();
-  return { ctx, step };
+  const { step, access } = await requireStepAccess(ctx, stepId);
+  if (!access.canEdit) notFound();
+  return { ctx, step, access };
 }
 
 export async function addAgencyComment(
@@ -48,10 +46,11 @@ export async function addAgencyComment(
 export async function deleteComment(commentId: string) {
   const ctx = await requireTenant();
   const comment = await prisma.comment.findFirst({
-    where: { id: commentId, step: { project: { agencyId: ctx.agencyId } } },
-    select: { id: true, step: { select: { projectId: true } } },
+    where: { id: commentId, step: { project: projectScope(ctx) } },
+    select: { id: true, stepId: true, step: { select: { projectId: true } } },
   });
   if (!comment) notFound();
+  await scopedStep(comment.stepId);
 
   await prisma.comment.delete({ where: { id: comment.id } });
   revalidatePath(`/app/projects/${comment.step.projectId}`);
@@ -99,9 +98,13 @@ export async function addCredential(
 export async function revealCredential(credentialId: string) {
   const ctx = await requireTenant();
   const credential = await prisma.credential.findFirst({
-    where: { id: credentialId, step: { project: { agencyId: ctx.agencyId } } },
+    where: { id: credentialId, step: { project: projectScope(ctx) } },
   });
   if (!credential) notFound();
+
+  // Etre sur le projet ne suffit pas : le coffre est un droit distinct.
+  const { access } = await requireStepAccess(ctx, credential.stepId);
+  if (!access.canViewCredentials) notFound();
 
   await prisma.credentialAccess.create({
     data: { credentialId: credential.id, userId: ctx.userId },
@@ -117,10 +120,13 @@ export async function revealCredential(credentialId: string) {
 export async function deleteCredential(credentialId: string) {
   const ctx = await requireTenant();
   const credential = await prisma.credential.findFirst({
-    where: { id: credentialId, step: { project: { agencyId: ctx.agencyId } } },
-    select: { id: true, step: { select: { projectId: true } } },
+    where: { id: credentialId, step: { project: projectScope(ctx) } },
+    select: { id: true, stepId: true, step: { select: { projectId: true } } },
   });
   if (!credential) notFound();
+
+  const { access } = await requireStepAccess(ctx, credential.stepId);
+  if (!access.canViewCredentials) notFound();
 
   await prisma.credential.delete({ where: { id: credential.id } });
   revalidatePath(`/app/projects/${credential.step.projectId}`);
@@ -129,10 +135,16 @@ export async function deleteCredential(credentialId: string) {
 export async function deleteAsset(assetId: string) {
   const ctx = await requireTenant();
   const asset = await prisma.asset.findFirst({
-    where: { id: assetId, step: { project: { agencyId: ctx.agencyId } } },
-    select: { id: true, storageKey: true, step: { select: { projectId: true } } },
+    where: { id: assetId, step: { project: projectScope(ctx) } },
+    select: {
+      id: true,
+      stepId: true,
+      storageKey: true,
+      step: { select: { projectId: true } },
+    },
   });
   if (!asset) notFound();
+  await scopedStep(asset.stepId);
 
   await prisma.asset.delete({ where: { id: asset.id } });
   await removeFile(asset.storageKey);
