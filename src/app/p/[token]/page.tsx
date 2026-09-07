@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { dictionary, parseLocale } from "@/lib/portal-i18n";
+import { dictionary, fill, parseLocale } from "@/lib/portal-i18n";
 import { resolvePortalToken, touchPortalLink } from "@/lib/portal";
 import { prisma } from "@/lib/prisma";
 import { progressOf } from "@/lib/progress";
@@ -74,14 +74,19 @@ export default async function PortalPage({
         locale={locale}
         token={token}
         summary={
-          pending.length === 0 ? t.allDone : t.remaining(pending.length)
+          pending.length === 0
+            ? t.allDone
+            : fill(t.remaining, { count: pending.length })
         }
       />
 
       <main className="mx-auto max-w-3xl px-5 py-10">
+        <p className="section-label mb-1.5 text-[var(--color-brand)]">
+          Espace client {agency.name}
+        </p>
         <h1 className="font-display text-4xl leading-tight">{project.name}</h1>
         <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-muted)]">
-          {t.intro(agency.name)}
+          {fill(t.intro, { agency: agency.name })}
         </p>
 
         {project.dueDate && (
@@ -93,8 +98,8 @@ export default async function PortalPage({
             }`}
           >
             {overdue
-              ? t.overdue(dayFormat.format(project.dueDate))
-              : t.dueOn(dayFormat.format(project.dueDate))}
+              ? fill(t.overdue, { date: dayFormat.format(project.dueDate) })
+              : fill(t.dueOn, { date: dayFormat.format(project.dueDate) })}
           </p>
         )}
 
@@ -105,7 +110,7 @@ export default async function PortalPage({
               {t.completedTitle}
             </p>
             <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-ink)]">
-              {t.completedBody(agency.name)}
+              {fill(t.completedBody, { agency: agency.name })}
             </p>
           </div>
         )}
@@ -179,7 +184,7 @@ export default async function PortalPage({
 
         <footer className="mt-14 border-t border-[var(--color-line)] pt-6 text-center">
           <p className="text-xs leading-relaxed text-[var(--color-muted)]">
-            {t.footerSecurity(agency.name)}
+            {fill(t.footerSecurity, { agency: agency.name })}
           </p>
           <div className="no-print mt-3 flex items-center justify-center gap-4 text-xs text-[var(--color-muted)]">
             <Link
@@ -189,7 +194,7 @@ export default async function PortalPage({
               {locale === "fr" ? "English" : "Français"}
             </Link>
             <span aria-hidden>·</span>
-            <span>{t.footerBy(agency.name)}</span>
+            <span>{fill(t.footerBy, { agency: agency.name })}</span>
           </div>
         </footer>
       </main>

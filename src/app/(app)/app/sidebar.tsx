@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { switchAgency } from "@/app/actions/agency";
 import { logout } from "@/app/actions/auth";
-import { LogoMark, Wordmark } from "@/components/logo";
+import { LogoMark } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,8 @@ const NAV = [
 
 type Props = {
   agencyName: string;
+  logoUrl: string | null;
+  accentColor: string;
   email: string;
   roleLabel: string;
   /** Etapes en attente de validation, tous projets visibles confondus. */
@@ -44,6 +46,8 @@ type Props = {
 
 export function Sidebar({
   agencyName,
+  logoUrl,
+  accentColor,
   email,
   roleLabel,
   awaitingCount,
@@ -72,13 +76,37 @@ export function Sidebar({
     });
   };
 
-  const initials = agencyName.slice(0, 2).toUpperCase();
-
   const content = (compact: boolean) => (
     <div className="flex h-full flex-col gap-5 p-3.5">
-      <div className="flex items-center justify-between">
-        <Link href="/app" className="focusable rounded-lg">
-          {compact ? <LogoMark size={22} /> : <Wordmark />}
+      <div className="flex items-center justify-between gap-2">
+        <Link href="/app" className="focusable min-w-0 rounded-lg">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt={agencyName}
+              className={cn("w-auto object-contain", compact ? "h-7" : "h-9")}
+            />
+          ) : (
+            <span
+              className={cn(
+                "flex items-center gap-2",
+                compact && "justify-center",
+              )}
+            >
+              <span
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[11px] font-semibold text-white"
+                style={{ background: accentColor }}
+              >
+                {agencyName.slice(0, 2).toUpperCase()}
+              </span>
+              {!compact && (
+                <span className="truncate font-display text-lg">
+                  {agencyName}
+                </span>
+              )}
+            </span>
+          )}
         </Link>
         <button
           type="button"
@@ -112,27 +140,11 @@ export function Sidebar({
             ))}
           </select>
         ) : (
-          <div
-            className={cn(
-              "flex items-center gap-2.5 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-2.5",
-              compact && "justify-center px-0",
-            )}
-            title={compact ? agencyName : undefined}
-          >
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--color-brand)] text-[11px] font-semibold text-white">
-              {initials}
-            </span>
-            {!compact && (
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium">
-                  {agencyName}
-                </span>
-                <span className="block truncate text-xs text-[var(--color-muted)]">
-                  {roleLabel}
-                </span>
-              </span>
-            )}
-          </div>
+          !compact && (
+            <p className="rounded-xl bg-[var(--color-brand-soft)] px-3 py-2 text-xs text-[var(--color-brand-ink)]">
+              {roleLabel}
+            </p>
+          )
         )}
       </div>
 
@@ -206,6 +218,12 @@ export function Sidebar({
             <ThemeToggle />
           </>
         )}
+        {!compact && (
+          <p className="flex items-center gap-1.5 px-1 text-[11px] text-[var(--color-muted)]">
+            <LogoMark size={12} />
+            propulsé par Onbo
+          </p>
+        )}
         <form action={logout}>
           <button
             type="submit"
@@ -226,8 +244,13 @@ export function Sidebar({
   return (
     <>
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[var(--color-line)] bg-[var(--color-surface)] px-4 md:hidden">
-        <Link href="/app" className="focusable rounded-lg">
-          <Wordmark />
+        <Link href="/app" className="focusable min-w-0 rounded-lg">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt={agencyName} className="h-8 w-auto" />
+          ) : (
+            <span className="truncate font-display text-lg">{agencyName}</span>
+          )}
         </Link>
         <button
           type="button"

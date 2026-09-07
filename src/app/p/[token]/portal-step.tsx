@@ -16,7 +16,7 @@ import { StepBadge, Tag } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
-import type { Dictionary } from "@/lib/portal-i18n";
+import { fill, type Dictionary } from "@/lib/portal-i18n";
 import { useDraft } from "@/lib/use-draft";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +61,7 @@ export function PortalStep({
       toast({
         message:
           next === "SUBMITTED"
-            ? t.submitted(agencyName)
+            ? fill(t.submitted, { agency: agencyName })
             : t.inProgress,
       });
     });
@@ -116,7 +116,7 @@ export function PortalStep({
         <div className="space-y-6 border-t border-[var(--color-line)] p-5">
           {locked ? (
             <p className="text-sm text-[var(--color-validated)]">
-              {t.validated(agencyName)}
+              {fill(t.validated, { agency: agencyName })}
             </p>
           ) : (
             <>
@@ -137,7 +137,7 @@ export function PortalStep({
               {status === "SUBMITTED" ? (
                 <>
                   <p className="flex-1 text-sm text-[var(--color-muted)]">
-                    {t.submitted(agencyName)}
+                    {fill(t.submitted, { agency: agencyName })}
                   </p>
                   <Button
                     size="sm"

@@ -11,7 +11,8 @@ export default async function AppLayout({
 }) {
   const ctx = await requireTenant();
 
-  const [agencies, awaitingCount] = await Promise.all([
+  const [agency, agencies, awaitingCount] = await Promise.all([
+    prisma.agency.findUniqueOrThrow({ where: { id: ctx.agencyId } }),
     listUserAgencies(ctx.userId),
     prisma.onboardingStep.count({
       where: { status: "SUBMITTED", project: projectScope(ctx) },
@@ -19,9 +20,17 @@ export default async function AppLayout({
   ]);
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
+    // La couleur de l'agence devient la couleur d'accent de toute
+    // l'application : le staff travaille dans son propre univers, pas dans le
+    // notre.
+    <div
+      className="flex min-h-screen flex-col md:flex-row"
+      style={{ ["--color-brand" as string]: agency.accentColor }}
+    >
       <Sidebar
         agencyName={ctx.agencyName}
+        logoUrl={agency.logoUrl}
+        accentColor={agency.accentColor}
         email={ctx.email}
         roleLabel={AGENCY_ROLE_LABEL[ctx.role]}
         awaitingCount={awaitingCount}

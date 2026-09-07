@@ -14,6 +14,7 @@ import { ProjectHeader } from "./project-header";
 import { ProjectToolbar } from "./project-toolbar";
 import { RemindersPanel } from "./reminders-panel";
 import { StepList } from "./step-list";
+import { ProjectTabs, type TabKey } from "./tabs";
 import { ProjectTeamPanel } from "./team-panel";
 
 const dateTime = new Intl.DateTimeFormat("fr-FR", {
@@ -40,10 +41,19 @@ export async function generateMetadata({
 
 export default async function ProjectPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ projectId: string }>;
+  searchParams: Promise<{ t?: string }>;
 }) {
   const { projectId } = await params;
+  const { t } = await searchParams;
+
+  const tab: TabKey = (
+    ["general", "equipe", "client", "logs", "reglages"].includes(t ?? "")
+      ? t
+      : "general"
+  ) as TabKey;
   const ctx = await requireTenant();
   // Projet hors agence, ou membre non affecte : 404 dans les deux cas.
   const access = await requireProjectAccess(ctx, projectId);
@@ -72,7 +82,7 @@ export default async function ProjectPage({
         orderBy: { createdAt: "desc" },
         take: 1,
       },
-      activities: { orderBy: { createdAt: "desc" }, take: 12 },
+      activities: { orderBy: { createdAt: "desc" }, take: 50 },
     },
   });
 
@@ -103,6 +113,7 @@ export default async function ProjectPage({
     : [];
 
   const now = Date.now();
+  const activities = project.activities;
 
   return (
     <>
@@ -145,8 +156,17 @@ export default async function ProjectPage({
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        <div>
+      <ProjectTabs
+        current={tab}
+        showTeam={access.canManageTeam}
+        counts={{
+          equipe: project.members.length,
+          client: project.clients.length,
+        }}
+      />
+
+      {tab === "general" && (
+        <>
           <StepList
             projectId={project.id}
             canEdit={access.canEdit}
@@ -203,23 +223,27 @@ export default async function ProjectPage({
               </CardContent>
             </Card>
           )}
+        </>
+      )}
+
+      {tab === "equipe" && access.canManageTeam && (
+        <div className="max-w-lg">
+          <ProjectTeamPanel
+            projectId={project.id}
+            assignable={assignable}
+            assignments={project.members.map((member) => ({
+              id: member.id,
+              userId: member.userId,
+              email: member.user.email,
+              role: member.role,
+              canViewCredentials: member.canViewCredentials,
+            }))}
+          />
         </div>
+      )}
 
-        <div className="space-y-6">
-          {access.canManageTeam && (
-            <ProjectTeamPanel
-              projectId={project.id}
-              assignable={assignable}
-              assignments={project.members.map((member) => ({
-                id: member.id,
-                userId: member.userId,
-                email: member.user.email,
-                role: member.role,
-                canViewCredentials: member.canViewCredentials,
-              }))}
-            />
-          )}
-
+      {tab === "client" && (
+        <div className="grid gap-6 md:grid-cols-2">
           <PortalPanel
             projectId={project.id}
             hasActiveLink={Boolean(activeLink)}
@@ -228,16 +252,6 @@ export default async function ProjectPage({
               activeLink?.lastUsedAt ? dateTime.format(activeLink.lastUsedAt) : null
             }
           />
-
-          <RemindersPanel
-            projectId={project.id}
-            enabled={project.remindersEnabled}
-            days={project.reminderDays}
-            lastReminderAt={
-              project.lastReminderAt ? dateTime.format(project.lastReminderAt) : null
-            }
-          />
-
           <ClientsPanel
             projectId={project.id}
             links={project.clients.map((link) => ({
@@ -247,9 +261,13 @@ export default async function ProjectPage({
               company: link.client.company,
             }))}
           />
+        </div>
+      )}
 
+      {tab === "logs" && (
+        <div className="max-w-2xl">
           <ActivityFeed
-            entries={project.activities.map((activity) => ({
+            entries={activities.map((activity) => ({
               id: activity.id,
               actor: activity.actor,
               actorName: activity.actorName,
@@ -259,7 +277,21 @@ export default async function ProjectPage({
             }))}
           />
         </div>
-      </div>
+      )}
+
+      {tab === "reglages" && (
+        <div className="max-w-lg">
+          <RemindersPanel
+            projectId={project.id}
+            enabled={project.remindersEnabled}
+            days={project.reminderDays}
+            lastReminderAt={
+              project.lastReminderAt ? dateTime.format(project.lastReminderAt) : null
+            }
+          />
+        </div>
+      )}
+
     </>
   );
 }

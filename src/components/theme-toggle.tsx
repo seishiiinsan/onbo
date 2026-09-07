@@ -36,7 +36,7 @@ export function ThemeToggle() {
     <div
       role="group"
       aria-label="Thème"
-      className="flex gap-0.5 rounded-lg border border-[var(--color-line)] p-0.5"
+      className="flex w-full gap-0.5 rounded-lg border border-[var(--color-line)] p-0.5"
     >
       {OPTIONS.map((option) => {
         const Icon = option.icon;
@@ -48,13 +48,14 @@ export function ThemeToggle() {
             title={option.label}
             onClick={() => choose(option.value)}
             className={cn(
-              "focusable rounded-md p-1.5 transition-colors",
+              "focusable flex flex-1 items-center justify-center gap-1.5 rounded-md py-1.5 text-xs transition-colors",
               theme === option.value
                 ? "bg-[var(--color-brand-soft)] text-[var(--color-brand-ink)]"
                 : "text-[var(--color-muted)] hover:text-[var(--color-ink)]",
             )}
           >
-            <Icon size={14} />
+            <Icon size={13} />
+            <span className="hidden lg:inline">{option.label}</span>
           </button>
         );
       })}
