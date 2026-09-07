@@ -1,25 +1,28 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { progressOf } from "@/lib/progress";
+import { dictionary, parseLocale } from "@/lib/portal-i18n";
 import { resolvePortalToken, touchPortalLink } from "@/lib/portal";
 import { prisma } from "@/lib/prisma";
-import { ProgressBar } from "@/components/ui/progress";
+import { progressOf } from "@/lib/progress";
+import { PortalHeader } from "./portal-header";
 import { PortalStep } from "./portal-step";
+import { QuestionBox } from "./question-box";
 
 export const metadata = { title: "Votre espace projet" };
 
-const dateFormat = new Intl.DateTimeFormat("fr-FR", {
-  dateStyle: "short",
-  timeStyle: "short",
-});
-
 export default async function PortalPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }) {
   const { token } = await params;
-  const link = await resolvePortalToken(token);
+  const { lang } = await searchParams;
+  const locale = parseLocale(lang);
+  const t = dictionary(locale);
 
+  const link = await resolvePortalToken(token);
   if (!link) notFound();
   await touchPortalLink(link.id);
 
@@ -32,76 +35,119 @@ export default async function PortalPage({
     orderBy: { position: "asc" },
     include: {
       assets: { orderBy: { createdAt: "asc" } },
-      comments: {
-        where: { internal: false },
-        orderBy: { createdAt: "asc" },
-      },
+      comments: { where: { internal: false }, orderBy: { createdAt: "asc" } },
       credentials: {
         orderBy: { createdAt: "asc" },
-        select: { id: true, label: true, kind: true, createdAt: true },
+        select: { id: true, label: true },
       },
     },
   });
 
+  const dateFormat = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+  const dayFormat = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", {
+    dateStyle: "long",
+  });
+
   const progress = progressOf(steps);
-  const remaining = steps.filter((step) => step.status !== "VALIDATED").length;
+  const pending = steps.filter((step) => step.status !== "VALIDATED");
+  // Item 28 : une seule action mise en avant, la premiere qui attend le client.
+  const nextStep =
+    pending.find((step) => step.status === "PENDING") ??
+    pending.find((step) => step.status === "IN_PROGRESS") ??
+    null;
+
+  const overdue =
+    project.dueDate !== null && project.dueDate.getTime() < Date.now();
 
   return (
     <div
       className="min-h-screen"
       style={{ ["--color-brand" as string]: agency.accentColor }}
     >
-      <header className="border-b border-[var(--color-line)] bg-[var(--color-surface)]">
-        <div className="mx-auto flex h-16 max-w-3xl items-center gap-3 px-5">
-          {agency.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={agency.logoUrl} alt={agency.name} className="h-8 w-auto" />
-          ) : (
-            <span className="font-display text-xl">{agency.name}</span>
-          )}
-        </div>
-      </header>
+      <PortalHeader
+        agencyName={agency.name}
+        logoUrl={agency.logoUrl}
+        progress={progress}
+        locale={locale}
+        token={token}
+        summary={
+          pending.length === 0 ? t.allDone : t.remaining(pending.length)
+        }
+      />
 
       <main className="mx-auto max-w-3xl px-5 py-10">
         <h1 className="font-display text-4xl leading-tight">{project.name}</h1>
-        <p className="mt-2 max-w-xl text-[var(--color-muted)]">
-          {agency.name} a besoin des éléments ci-dessous pour démarrer. Déposez
-          vos fichiers, transmettez vos accès en sécurité, et cochez au fur et à
-          mesure. Vous pouvez revenir quand vous voulez.
+        <p className="mt-2 max-w-xl leading-relaxed text-[var(--color-muted)]">
+          {t.intro(agency.name)}
         </p>
 
-        <div className="mt-8 mb-10 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-5">
-          <div className="mb-3 flex items-baseline justify-between">
-            <span className="font-display text-2xl">{progress}%</span>
-            <span className="text-sm text-[var(--color-muted)]">
-              {remaining === 0
-                ? "Tout est transmis, merci !"
-                : `${remaining} point(s) restant(s)`}
-            </span>
+        {project.dueDate && (
+          <p
+            className={`mt-3 text-sm ${
+              overdue
+                ? "text-[var(--color-danger)]"
+                : "text-[var(--color-muted)]"
+            }`}
+          >
+            {overdue
+              ? t.overdue(dayFormat.format(project.dueDate))
+              : t.dueOn(dayFormat.format(project.dueDate))}
+          </p>
+        )}
+
+        {/* Fin de parcours (item 31) */}
+        {steps.length > 0 && pending.length === 0 && (
+          <div className="mt-8 rounded-[var(--radius-card)] border border-[var(--color-validated)]/30 bg-[var(--color-validated-soft)] p-6">
+            <p className="font-display text-2xl text-[var(--color-validated)]">
+              {t.completedTitle}
+            </p>
+            <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-ink)]">
+              {t.completedBody(agency.name)}
+            </p>
           </div>
-          <ProgressBar value={progress} />
-        </div>
+        )}
+
+        {/* Prochaine action (item 28) */}
+        {nextStep && (
+          <div className="mt-8 rounded-[var(--radius-card)] border border-[var(--color-brand)]/30 bg-[var(--color-brand-soft)] px-4 py-3">
+            <p className="section-label text-[var(--color-brand-ink)]">
+              {t.nextUp}
+            </p>
+            <p className="mt-1 font-medium">{nextStep.title}</p>
+            {nextStep.description && (
+              <p className="mt-0.5 text-sm text-[var(--color-muted)]">
+                {nextStep.description}
+              </p>
+            )}
+          </div>
+        )}
 
         {steps.length === 0 ? (
-          <p className="text-sm text-[var(--color-muted)]">
-            Aucune étape pour l&apos;instant. {agency.name} vous préviendra.
-          </p>
+          <p className="mt-8 text-sm text-[var(--color-muted)]">{t.noSteps}</p>
         ) : (
-          <ul className="grid gap-3">
+          <ul className="mt-8 grid gap-3">
             {steps.map((step) => (
               <PortalStep
                 key={step.id}
                 token={token}
                 agencyName={agency.name}
+                t={t}
+                highlighted={step.id === nextStep?.id}
                 step={{
                   id: step.id,
                   title: step.title,
                   description: step.description,
                   kind: step.kind,
                   status: step.status,
+                  required: step.required,
+                  blockedNote: step.blockedNote,
                   assets: step.assets.map((asset) => ({
                     id: asset.id,
                     filename: asset.filename,
+                    mimeType: asset.mimeType,
                     size: asset.size,
                   })),
                   credentials: step.credentials.map((credential) => ({
@@ -120,17 +166,35 @@ export default async function PortalPage({
           </ul>
         )}
 
+        {/* Question globale (item 35) */}
+        {steps.length > 0 && (
+          <QuestionBox
+            token={token}
+            stepId={(nextStep ?? steps[0]).id}
+            label={t.askQuestion}
+            placeholder={t.questionPlaceholder}
+            sendLabel={t.send}
+          />
+        )}
+
         <footer className="mt-14 border-t border-[var(--color-line)] pt-6 text-center">
           <p className="text-xs leading-relaxed text-[var(--color-muted)]">
-            Vos fichiers et vos accès ne sont visibles que par {agency.name}.
-            Les mots de passe transmis ici sont chiffrés et ne circulent jamais
-            par email.
+            {t.footerSecurity(agency.name)}
           </p>
-          <p className="mt-2 text-xs text-[var(--color-muted)]">
-            Espace fourni par {agency.name} · propulsé par Onbo
-          </p>
+          <div className="no-print mt-3 flex items-center justify-center gap-4 text-xs text-[var(--color-muted)]">
+            <Link
+              href={`/p/${token}?lang=${locale === "fr" ? "en" : "fr"}`}
+              className="focusable rounded underline-offset-2 hover:underline"
+            >
+              {locale === "fr" ? "English" : "Français"}
+            </Link>
+            <span aria-hidden>·</span>
+            <span>{t.footerBy(agency.name)}</span>
+          </div>
         </footer>
       </main>
     </div>
   );
 }
+
+export const dynamic = "force-dynamic";

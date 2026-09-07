@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 import type { CredentialKind } from "@prisma/client";
 import { projectScope, requireStepAccess } from "@/lib/access";
+import { logActivity } from "@/lib/activity";
 import { open, seal, MissingEncryptionKey } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
 import { removeFile } from "@/lib/storage";
@@ -38,6 +39,15 @@ export async function addAgencyComment(
       stepId: step.id,
     },
   });
+
+  if (!internal) {
+    await logActivity({
+      projectId: step.projectId,
+      actor: "AGENCY",
+      actorName: ctx.email,
+      action: "a écrit au client",
+    });
+  }
 
   revalidatePath(`/app/projects/${step.projectId}`);
   return {};

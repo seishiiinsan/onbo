@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
-import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 import type { MembershipRole } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +11,9 @@ import { prisma } from "@/lib/prisma";
  * Voir issue #6 : l'agence A ne doit jamais pouvoir lire les donnees de B,
  * ni deduire leur existence (404, pas 403).
  */
+/** Agence active choisie par l'utilisateur (item 2). */
+export const AGENCY_COOKIE = "onbo_agency";
+
 export type TenantContext = {
   userId: string;
   email: string;
@@ -43,9 +46,13 @@ export async function requireTenant(slug?: string): Promise<TenantContext> {
 
   if (memberships.length === 0) redirect("/onboarding");
 
+  // Sans slug explicite : l'agence choisie via le selecteur, sinon la premiere.
+  const jar = await cookies();
+  const active = jar.get(AGENCY_COOKIE)?.value;
+
   const membership = slug
     ? memberships.find((m) => m.agency.slug === slug)
-    : memberships[0];
+    : (memberships.find((m) => m.agencyId === active) ?? memberships[0]);
 
   if (!membership) notFound();
 

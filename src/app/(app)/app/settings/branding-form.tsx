@@ -78,12 +78,21 @@ export function BrandingForm({ canEdit, agency }: Props) {
             <p className="mb-2 text-sm text-red-600">{state.error}</p>
           )}
 
-          <Button type="submit" disabled={!canEdit || pending}>
+          <Button
+            type="submit"
+            disabled={!canEdit || pending}
+            title={
+              canEdit
+                ? undefined
+                : "Réservé aux propriétaires et directeurs de projet"
+            }
+          >
             {pending ? "Enregistrement…" : "Enregistrer"}
           </Button>
           {!canEdit && (
             <p className="mt-2 text-xs text-[var(--color-muted)]">
-              Rôle MEMBER : lecture seule.
+              Lecture seule : seuls un propriétaire ou un directeur de projet
+              peuvent modifier l&apos;identité de l&apos;agence.
             </p>
           )}
         </form>

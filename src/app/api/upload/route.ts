@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logActivity } from "@/lib/activity";
 import { getCurrentUser } from "@/lib/auth";
 import { resolvePortalToken } from "@/lib/portal";
 import { prisma } from "@/lib/prisma";
@@ -58,6 +59,14 @@ export async function POST(request: NextRequest) {
       uploadedByClient: Boolean(token),
       stepId: step.id,
     },
+    include: { step: { select: { projectId: true } } },
+  });
+
+  await logActivity({
+    projectId: asset.step.projectId,
+    actor: token ? "CLIENT" : "AGENCY",
+    action: "a déposé un fichier",
+    detail: asset.filename,
   });
 
   return NextResponse.json({ id: asset.id, filename: asset.filename });

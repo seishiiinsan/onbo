@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useTransition } from "react";
 import type { MembershipRole } from "@prisma/client";
 import {
@@ -49,7 +50,12 @@ export function TeamPanel({
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
-                  {member.email}
+                  <Link
+                    href={`/app/settings/members/${member.userId}`}
+                    className="focusable rounded hover:underline"
+                  >
+                    {member.email}
+                  </Link>
                   {member.isSelf && (
                     <span className="text-[var(--color-muted)]"> (vous)</span>
                   )}

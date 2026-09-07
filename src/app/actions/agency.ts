@@ -1,9 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireRole, requireTenant, requireUser, slugify } from "@/lib/tenant";
+import {
+  AGENCY_COOKIE,
+  requireRole,
+  requireTenant,
+  requireUser,
+  slugify,
+} from "@/lib/tenant";
 
 export type AgencyState = { error?: string };
 
@@ -58,4 +65,26 @@ export async function updateBranding(
 
   revalidatePath("/app/settings");
   return {};
+}
+
+/** Bascule l'espace actif (item 2). */
+export async function switchAgency(agencyId: string) {
+  const user = await requireUser();
+
+  // On ne bascule que vers une agence dont l'utilisateur est membre.
+  const membership = await prisma.membership.findUnique({
+    where: { userId_agencyId: { userId: user.id, agencyId } },
+  });
+  if (!membership) return;
+
+  const jar = await cookies();
+  jar.set(AGENCY_COOKIE, agencyId, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+
+  revalidatePath("/app");
+  redirect("/app");
 }

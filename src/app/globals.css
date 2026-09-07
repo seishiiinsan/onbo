@@ -130,6 +130,22 @@
   }
 }
 
+/* Impression du portail (item 33) : pas de chrome, pas d'aplats. */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  [data-print-open] {
+    display: block !important;
+  }
+}
+
 @layer utilities {
   /* Squelettes de chargement. */
   .skeleton {

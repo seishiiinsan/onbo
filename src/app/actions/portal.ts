@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
 import type { CredentialKind, StepStatus } from "@prisma/client";
+import { logActivity } from "@/lib/activity";
 import { MissingEncryptionKey, seal } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
 import { resolvePortalToken } from "@/lib/portal";
@@ -33,9 +34,19 @@ export async function clientSetStepStatus(
   // Une etape deja validee par l'agence n'est plus modifiable par le client.
   if (step.status === "VALIDATED") return;
 
-  await prisma.onboardingStep.update({
+  const updated = await prisma.onboardingStep.update({
     where: { id: step.id },
     data: { status },
+  });
+
+  await logActivity({
+    projectId: link.projectId,
+    actor: "CLIENT",
+    action:
+      status === "SUBMITTED"
+        ? "a déclaré une étape complète"
+        : "a repris une étape",
+    detail: updated.title,
   });
 
   revalidatePath(`/p/${token}`);
@@ -68,6 +79,12 @@ export async function clientAddComment(
 
   await prisma.comment.create({
     data: { body, author: "CLIENT", stepId: step.id, internal: false },
+  });
+
+  await logActivity({
+    projectId: link.projectId,
+    actor: "CLIENT",
+    action: "a écrit un message",
   });
 
   revalidatePath(`/p/${token}`);
@@ -110,10 +127,20 @@ export async function clientAddCredential(
     });
   } catch (error) {
     if (error instanceof MissingEncryptionKey) {
-      return { error: "Dépôt d'accès momentanément indisponible." };
+      return {
+        error:
+          "Le dépôt d'accès est momentanément indisponible. Prévenez votre agence plutôt que d'envoyer vos identifiants par email.",
+      };
     }
     throw error;
   }
+
+  await logActivity({
+    projectId: link.projectId,
+    actor: "CLIENT",
+    action: "a transmis un accès",
+    detail: label,
+  });
 
   revalidatePath(`/p/${token}`);
   revalidatePath(`/app/projects/${link.projectId}`);

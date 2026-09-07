@@ -1,40 +1,54 @@
 import Link from "next/link";
 import { projectScope } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
-import { progressOf, STALE_DAYS, isStale } from "@/lib/progress";
+import { isStale, progressOf, STALE_DAYS } from "@/lib/progress";
 import { requireTenant } from "@/lib/tenant";
-import { Button } from "@/components/ui/button";
-import { ProjectBadge } from "@/components/ui/badge";
-import { ProgressRing } from "@/components/ui/progress";
 import { EmptyState, PageHeader } from "@/components/page-header";
-import { FilterTabs } from "./filter-tabs";
+import { ProjectBadge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ProgressRing } from "@/components/ui/progress";
+import { DashboardControls } from "./dashboard-controls";
 
-export const metadata = { title: "Projets · Onbo" };
+export const metadata = { title: "Projets" };
 
-type Filter = "actifs" | "bloques" | "attente" | "termines";
+const PAGE_SIZE = 25;
+
+type Search = {
+  f?: string;
+  q?: string;
+  s?: string;
+  g?: string;
+  v?: string;
+  p?: string;
+};
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ f?: string }>;
+  searchParams: Promise<Search>;
 }) {
   const ctx = await requireTenant();
-  const { f } = await searchParams;
-  const filter: Filter = (["actifs", "bloques", "attente", "termines"].includes(
-    f ?? "",
-  )
-    ? f
-    : "actifs") as Filter;
+  const params = await searchParams;
 
-  // Toute lecture produit est bornee a l'agencyId de la session (issue #6).
+  const filter = params.f ?? "actifs";
+  const search = (params.q ?? "").trim().toLowerCase();
+  const sort = params.s ?? "activity";
+  const group = params.g ?? "none";
+  const view = params.v ?? "list";
+  const page = Math.max(1, Number(params.p ?? 1) || 1);
+
+  // Toute lecture produit est bornee au perimetre de la session (issues #6, #29).
   const projects = await prisma.project.findMany({
-    where: { ...projectScope(ctx), status: { not: "ARCHIVED" } },
+    where: projectScope(ctx),
     orderBy: { updatedAt: "desc" },
     include: {
-      steps: { select: { status: true, updatedAt: true } },
+      steps: { select: { status: true, updatedAt: true, required: true } },
+      clients: { include: { client: true } },
       _count: { select: { clients: true } },
     },
   });
+
+  const now = Date.now();
 
   const enriched = projects.map((project) => {
     const progress = progressOf(project.steps);
@@ -42,22 +56,66 @@ export default async function DashboardPage({
       (step) => step.status === "SUBMITTED",
     ).length;
     const stale = project.steps.some(isStale);
-    return { ...project, progress, awaiting, stale };
+    const overdue =
+      project.dueDate !== null &&
+      project.dueDate.getTime() < now &&
+      project.status !== "COMPLETED";
+    const clientLabel =
+      project.clients[0]?.client.company ??
+      project.clients[0]?.client.name ??
+      project.clients[0]?.client.email ??
+      "Sans client";
+
+    return { ...project, progress, awaiting, stale, overdue, clientLabel };
   });
 
   const counts = {
-    actifs: enriched.filter((p) => p.status !== "COMPLETED").length,
-    bloques: enriched.filter((p) => p.stale && p.status !== "COMPLETED").length,
-    attente: enriched.filter((p) => p.awaiting > 0).length,
+    actifs: enriched.filter(
+      (p) => p.status !== "COMPLETED" && p.status !== "ARCHIVED",
+    ).length,
+    attente: enriched.filter((p) => p.awaiting > 0 && p.status !== "ARCHIVED")
+      .length,
+    bloques: enriched.filter(
+      (p) => (p.stale || p.overdue) && p.status !== "ARCHIVED" && p.status !== "COMPLETED",
+    ).length,
     termines: enriched.filter((p) => p.status === "COMPLETED").length,
+    archives: enriched.filter((p) => p.status === "ARCHIVED").length,
   };
 
-  const visible = enriched.filter((project) => {
-    if (filter === "bloques") return project.stale && project.status !== "COMPLETED";
-    if (filter === "attente") return project.awaiting > 0;
+  const matchesFilter = (project: (typeof enriched)[number]) => {
+    if (filter === "archives") return project.status === "ARCHIVED";
+    if (project.status === "ARCHIVED") return false;
     if (filter === "termines") return project.status === "COMPLETED";
+    if (filter === "attente") return project.awaiting > 0;
+    if (filter === "bloques")
+      return (project.stale || project.overdue) && project.status !== "COMPLETED";
     return project.status !== "COMPLETED";
-  });
+  };
+
+  const filtered = enriched
+    .filter(matchesFilter)
+    .filter((project) =>
+      search ? project.name.toLowerCase().includes(search) : true,
+    )
+    .sort((a, b) => {
+      if (sort === "progress") return b.progress - a.progress;
+      if (sort === "name") return a.name.localeCompare(b.name, "fr");
+      if (sort === "due") {
+        const left = a.dueDate?.getTime() ?? Number.POSITIVE_INFINITY;
+        const right = b.dueDate?.getTime() ?? Number.POSITIVE_INFINITY;
+        return left - right;
+      }
+      return b.updatedAt.getTime() - a.updatedAt.getTime();
+    });
+
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const totalAwaiting = enriched.reduce(
+    (sum, project) => sum + project.awaiting,
+    0,
+  );
+  const blocked = counts.bloques;
 
   return (
     <>
@@ -65,7 +123,7 @@ export default async function DashboardPage({
         title="Projets"
         subtitle="Un projet = un onboarding client."
         action={
-          <Link href="/app/projects/new">
+          <Link href="/app/projects/new" className="focusable rounded-full">
             <Button variant="accent">Nouveau projet</Button>
           </Link>
         }
@@ -76,55 +134,215 @@ export default async function DashboardPage({
           title="Rien à collecter pour l'instant."
           hint="Créez un projet : la checklist assets, accès, brief et contenus est déjà prête."
           action={
-            <Link href="/app/projects/new">
+            <Link href="/app/projects/new" className="focusable rounded-full">
               <Button variant="accent">Créer mon premier projet</Button>
             </Link>
           }
         />
       ) : (
         <>
-          <FilterTabs current={filter} counts={counts} />
+          {/* Bandeau du jour (item 12) */}
+          {(totalAwaiting > 0 || blocked > 0) && (
+            <p className="mb-5 rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3 text-sm">
+              {totalAwaiting > 0 && (
+                <>
+                  <span className="font-medium">{totalAwaiting}</span> étape(s)
+                  attendent votre validation
+                </>
+              )}
+              {totalAwaiting > 0 && blocked > 0 && " · "}
+              {blocked > 0 && (
+                <>
+                  <span className="font-medium">{blocked}</span> projet(s) sans
+                  mouvement ou en retard
+                </>
+              )}
+              .
+            </p>
+          )}
+
+          <DashboardControls counts={counts} />
 
           {visible.length === 0 ? (
-            <EmptyState title="Aucun projet dans cette vue." />
+            <EmptyState
+              title="Aucun projet dans cette vue."
+              hint="Changez de filtre ou videz la recherche."
+            />
+          ) : view === "table" ? (
+            <ProjectTable projects={visible} />
+          ) : group === "client" ? (
+            <GroupedList projects={visible} />
           ) : (
-            <ul className="grid gap-2.5">
-              {visible.map((project) => (
-                <li key={project.id}>
-                  <Link href={`/app/projects/${project.id}`} className="block">
-                    <article className="flex items-center gap-4 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-line-strong)]">
-                      <ProgressRing value={project.progress} />
+            <ProjectList projects={visible} />
+          )}
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="truncate font-medium">
-                            {project.name}
-                          </span>
-                          <ProjectBadge status={project.status} />
-                          {project.awaiting > 0 && (
-                            <span className="rounded-full bg-[var(--color-submitted-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-submitted)]">
-                              {project.awaiting} à valider
-                            </span>
-                          )}
-                          {project.stale && (
-                            <span className="rounded-full bg-[var(--color-progress-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-progress)]">
-                              Sans activité depuis {STALE_DAYS} j
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-1 text-xs text-[var(--color-muted)]">
-                          {project.steps.length} étape(s) ·{" "}
-                          {project._count.clients} contact(s)
-                        </p>
-                      </div>
-                    </article>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          {pages > 1 && (
+            <nav className="mt-6 flex items-center justify-center gap-2 text-sm">
+              {Array.from({ length: pages }, (_, index) => index + 1).map(
+                (number) => {
+                  const next = new URLSearchParams(
+                    Object.entries(params).filter(([, value]) =>
+                      Boolean(value),
+                    ) as [string, string][],
+                  );
+                  next.set("p", String(number));
+
+                  return (
+                    <Link
+                      key={number}
+                      href={`/app?${next.toString()}`}
+                      className={`focusable rounded-lg px-3 py-1.5 ${
+                        number === page
+                          ? "bg-[var(--color-ink)] text-[var(--color-canvas)]"
+                          : "text-[var(--color-muted)] hover:bg-black/[0.04]"
+                      }`}
+                    >
+                      {number}
+                    </Link>
+                  );
+                },
+              )}
+            </nav>
           )}
         </>
       )}
     </>
+  );
+}
+
+type Enriched = {
+  id: string;
+  name: string;
+  status: "DRAFT" | "ACTIVE" | "COMPLETED" | "ARCHIVED";
+  progress: number;
+  awaiting: number;
+  stale: boolean;
+  overdue: boolean;
+  dueDate: Date | null;
+  clientLabel: string;
+  steps: unknown[];
+  _count: { clients: number };
+};
+
+function Flags({ project }: { project: Enriched }) {
+  return (
+    <>
+      {project.awaiting > 0 && (
+        <span className="rounded-full bg-[var(--color-submitted-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-submitted)]">
+          {project.awaiting} à valider
+        </span>
+      )}
+      {project.overdue && (
+        <span className="rounded-full bg-[var(--color-danger)]/10 px-2 py-0.5 text-[11px] font-medium text-[var(--color-danger)]">
+          En retard
+        </span>
+      )}
+      {project.stale && !project.overdue && (
+        <span className="rounded-full bg-[var(--color-progress-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-progress)]">
+          Sans activité depuis {STALE_DAYS} j
+        </span>
+      )}
+    </>
+  );
+}
+
+function ProjectList({ projects }: { projects: Enriched[] }) {
+  return (
+    <ul className="grid gap-2.5">
+      {projects.map((project) => (
+        <li key={project.id}>
+          <Link href={`/app/projects/${project.id}`} className="focusable block rounded-[var(--radius-card)]">
+            <article className="flex items-center gap-4 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-line-strong)]">
+              <ProgressRing value={project.progress} />
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="truncate font-medium">{project.name}</span>
+                  <ProjectBadge status={project.status} />
+                  <Flags project={project} />
+                </div>
+                <p className="mt-1 text-xs text-[var(--color-muted)]">
+                  {project.clientLabel} · {project.steps.length} étape(s)
+                  {project.dueDate &&
+                    ` · échéance ${project.dueDate.toLocaleDateString("fr-FR")}`}
+                </p>
+              </div>
+            </article>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function GroupedList({ projects }: { projects: Enriched[] }) {
+  const groups = new Map<string, Enriched[]>();
+  for (const project of projects) {
+    const list = groups.get(project.clientLabel) ?? [];
+    list.push(project);
+    groups.set(project.clientLabel, list);
+  }
+
+  return (
+    <div className="space-y-6">
+      {[...groups.entries()].map(([client, list]) => (
+        <section key={client}>
+          <h2 className="section-label mb-2">{client}</h2>
+          <ProjectList projects={list} />
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function ProjectTable({ projects }: { projects: Enriched[] }) {
+  return (
+    <div className="overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-line)]">
+      <table className="w-full min-w-[40rem] border-collapse bg-[var(--color-surface)] text-sm">
+        <thead>
+          <tr className="border-b border-[var(--color-line)] text-left">
+            <th className="px-4 py-2.5 font-medium">Projet</th>
+            <th className="px-4 py-2.5 font-medium">Client</th>
+            <th className="px-4 py-2.5 font-medium">Statut</th>
+            <th className="px-4 py-2.5 font-medium">Échéance</th>
+            <th className="px-4 py-2.5 text-right font-medium">Avancement</th>
+          </tr>
+        </thead>
+        <tbody>
+          {projects.map((project) => (
+            <tr
+              key={project.id}
+              className="border-b border-[var(--color-line)] last:border-b-0 hover:bg-[var(--color-canvas)]"
+            >
+              <td className="px-4 py-2.5">
+                <Link
+                  href={`/app/projects/${project.id}`}
+                  className="focusable rounded font-medium hover:underline"
+                >
+                  {project.name}
+                </Link>
+                <span className="ml-2 inline-flex gap-1 align-middle">
+                  <Flags project={project} />
+                </span>
+              </td>
+              <td className="px-4 py-2.5 text-[var(--color-muted)]">
+                {project.clientLabel}
+              </td>
+              <td className="px-4 py-2.5">
+                <ProjectBadge status={project.status} />
+              </td>
+              <td className="px-4 py-2.5 text-[var(--color-muted)]">
+                {project.dueDate
+                  ? project.dueDate.toLocaleDateString("fr-FR")
+                  : "—"}
+              </td>
+              <td className="px-4 py-2.5 text-right tabular-nums">
+                {project.progress} %
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
