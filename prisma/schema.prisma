@@ -37,12 +37,13 @@ enum StepKind {
 
 /// Tenant payant.
 model Agency {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  logoUrl   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  logoUrl     String?
+  accentColor String   @default("#2f6bff")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   memberships Membership[]
   projects    Project[]
@@ -57,6 +58,32 @@ model User {
   updatedAt DateTime @updatedAt
 
   memberships Membership[]
+  sessions    Session[]
+}
+
+/// Lien magique a usage unique (connexion staff).
+model LoginToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  email     String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email])
+}
+
+/// Session staff (cookie httpOnly).
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Membership {
@@ -94,7 +121,7 @@ model Project {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
-  agency  Agency          @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  agency  Agency           @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   clients ClientProject[]
   steps   OnboardingStep[]
 
