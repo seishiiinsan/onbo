@@ -63,7 +63,7 @@ export default async function MemberPage({
           : " · jamais connecté"}
       </p>
 
-      <Card className="max-w-lg">
+      <Card className="max-w-2xl">
         <CardHeader>
           <CardTitle>Accès aux projets</CardTitle>
         </CardHeader>

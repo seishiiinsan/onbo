@@ -23,7 +23,7 @@ export function BrandingForm({ canEdit, agency }: Props) {
   const [state, action, pending] = useActionState(updateBranding, initial);
 
   return (
-    <Card className="max-w-lg">
+    <Card>
       <CardHeader>
         <CardTitle>Identité</CardTitle>
         <span className="text-xs text-[var(--color-muted)]">

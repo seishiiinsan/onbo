@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { PageHeader } from "@/components/page-header";
 import { BrandingForm } from "./branding-form";
+import { ProfileForm } from "./profile-form";
 import { TeamPanel } from "./team-panel";
 
 export const metadata = { title: "Réglages · Onbo" };
@@ -9,8 +10,9 @@ export const metadata = { title: "Réglages · Onbo" };
 export default async function SettingsPage() {
   const ctx = await requireTenant();
 
-  const [agency, memberships] = await Promise.all([
+  const [agency, user, memberships] = await Promise.all([
     prisma.agency.findUniqueOrThrow({ where: { id: ctx.agencyId } }),
+    prisma.user.findUniqueOrThrow({ where: { id: ctx.userId } }),
     prisma.membership.findMany({
       where: { agencyId: ctx.agencyId },
       orderBy: { joinedAt: "asc" },
@@ -34,7 +36,9 @@ export default async function SettingsPage() {
         title="Réglages"
         subtitle="Identité de l'agence et personnes qui y travaillent."
       />
-      <div className="space-y-6">
+      <div className="max-w-2xl space-y-6">
+        <ProfileForm name={user.name ?? ""} email={user.email} />
+
         <BrandingForm
         canEdit={ctx.role !== "MEMBER"}
         agency={{

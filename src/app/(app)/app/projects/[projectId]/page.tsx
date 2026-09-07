@@ -227,7 +227,7 @@ export default async function ProjectPage({
       )}
 
       {tab === "equipe" && access.canManageTeam && (
-        <div className="max-w-lg">
+        <div className="max-w-2xl">
           <ProjectTeamPanel
             projectId={project.id}
             assignable={assignable}
@@ -280,7 +280,7 @@ export default async function ProjectPage({
       )}
 
       {tab === "reglages" && (
-        <div className="max-w-lg">
+        <div className="max-w-2xl">
           <RemindersPanel
             projectId={project.id}
             enabled={project.remindersEnabled}

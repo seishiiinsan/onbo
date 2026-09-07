@@ -7,19 +7,15 @@ import {
   ChevronsLeft,
   ChevronsRight,
   FolderKanban,
-  LogOut,
   Menu,
   Plus,
-  Search,
-  Settings,
   X,
 } from "lucide-react";
 import { switchAgency } from "@/app/actions/agency";
-import { logout } from "@/app/actions/auth";
 import { LogoMark } from "@/components/logo";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { UserMenu } from "./user-menu";
 
 /**
  * Navigation principale.
@@ -30,7 +26,6 @@ import { cn } from "@/lib/utils";
  */
 const NAV = [
   { href: "/app", label: "Projets", icon: FolderKanban, exact: true },
-  { href: "/app/settings", label: "Réglages", icon: Settings, exact: false },
 ];
 
 type Props = {
@@ -38,6 +33,7 @@ type Props = {
   logoUrl: string | null;
   accentColor: string;
   email: string;
+  userName: string;
   roleLabel: string;
   /** Etapes en attente de validation, tous projets visibles confondus. */
   awaitingCount: number;
@@ -49,6 +45,7 @@ export function Sidebar({
   logoUrl,
   accentColor,
   email,
+  userName,
   roleLabel,
   awaitingCount,
   agencies,
@@ -85,7 +82,7 @@ export function Sidebar({
             <img
               src={logoUrl}
               alt={agencyName}
-              className={cn("w-auto object-contain", compact ? "h-7" : "h-9")}
+              className={cn("w-auto object-contain", compact ? "h-9" : "h-9")}
             />
           ) : (
             <span
@@ -118,9 +115,10 @@ export function Sidebar({
         </button>
       </div>
 
-      {/* Selecteur d'espace (item 2) */}
-      <div>
-        {agencies.length > 1 && !compact ? (
+      {/* Selecteur d'espace, seulement quand il y a un choix a faire */}
+      {agencies.length > 1 && (
+        <div>
+          {!compact ? (
           <select
             aria-label="Espace agence"
             value={agencies.find((agency) => agency.active)?.id}
@@ -131,25 +129,28 @@ export function Sidebar({
                 void switchAgency(id);
               });
             }}
-            className="focusable w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-2.5 text-sm"
-          >
-            {agencies.map((agency) => (
-              <option key={agency.id} value={agency.id}>
-                {agency.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          !compact && (
-            <p className="rounded-xl bg-[var(--color-brand-soft)] px-3 py-2 text-xs text-[var(--color-brand-ink)]">
-              {roleLabel}
-            </p>
-          )
-        )}
-      </div>
+              className="focusable w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-2.5 text-sm"
+            >
+              {agencies.map((agency) => (
+                <option key={agency.id} value={agency.id}>
+                  {agency.name}
+                </option>
+              ))}
+            </select>
+          ) : null}
+        </div>
+      )}
 
-      <Link href="/app/projects/new" className="focusable rounded-full">
-        <Button variant="accent" className="w-full" title="Nouveau projet (N)">
+      <Link
+        href="/app/projects/new"
+        className="focusable block rounded-full"
+        title="Nouveau projet (N)"
+      >
+        <Button
+          variant="accent"
+          size={compact ? "icon" : "default"}
+          className={compact ? "mx-auto" : "w-full"}
+        >
           <Plus size={16} />
           {!compact && "Nouveau projet"}
         </Button>
@@ -201,42 +202,17 @@ export function Sidebar({
           })}
         </ul>
 
-        {!compact && (
-          <p className="mt-4 px-3 text-[11px] leading-relaxed text-[var(--color-muted)]">
-            <Search size={11} className="mr-1 inline" />
-            ⌘K pour rechercher · N pour un nouveau projet
-          </p>
-        )}
       </nav>
 
       <div className="space-y-2 border-t border-[var(--color-line)] pt-3">
-        {!compact && (
-          <>
-            <p className="truncate px-1 text-xs text-[var(--color-muted)]">
-              {email}
-            </p>
-            <ThemeToggle />
-          </>
-        )}
+        <UserMenu name={userName} email={email} compact={compact} />
+
         {!compact && (
           <p className="flex items-center gap-1.5 px-1 text-[11px] text-[var(--color-muted)]">
             <LogoMark size={12} />
-            propulsé par Onbo
+            propulsé par Onbo · {roleLabel}
           </p>
         )}
-        <form action={logout}>
-          <button
-            type="submit"
-            title="Déconnexion"
-            className={cn(
-              "focusable flex w-full items-center gap-2 rounded-lg px-1 py-1.5 text-sm text-[var(--color-muted)] transition-colors hover:text-[var(--color-ink)]",
-              compact && "justify-center px-0",
-            )}
-          >
-            <LogOut size={15} />
-            {!compact && "Déconnexion"}
-          </button>
-        </form>
       </div>
     </div>
   );

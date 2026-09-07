@@ -14,8 +14,13 @@
   --color-line-strong: #d5d1c8;
 
   --color-brand: #5a3bff;
-  --color-brand-ink: #3d21d6;
-  --color-brand-soft: #efeaff;
+  /*
+   * Derivees de --color-brand : quand une agence impose sa couleur, les
+   * etats survol et fonds suivent automatiquement. Aucune valeur de marque
+   * en dur ailleurs dans l'application.
+   */
+  --color-brand-ink: color-mix(in srgb, var(--color-brand) 78%, #000);
+  --color-brand-soft: color-mix(in srgb, var(--color-brand) 12%, #fff);
 
   --color-pending: #8b8f96;
   --color-progress: #b4740f;
@@ -51,8 +56,8 @@
       --color-line: #262a31;
       --color-line-strong: #363b44;
       --color-brand: #8f79ff;
-      --color-brand-ink: #b3a3ff;
-      --color-brand-soft: #24203a;
+      --color-brand-ink: color-mix(in srgb, var(--color-brand) 70%, #fff);
+      --color-brand-soft: color-mix(in srgb, var(--color-brand) 22%, #000);
       --color-progress-soft: #2b2312;
       --color-submitted-soft: #16233d;
       --color-validated-soft: #123026;
@@ -69,8 +74,8 @@
     --color-line: #262a31;
     --color-line-strong: #363b44;
     --color-brand: #8f79ff;
-    --color-brand-ink: #b3a3ff;
-    --color-brand-soft: #24203a;
+    --color-brand-ink: color-mix(in srgb, var(--color-brand) 70%, #fff);
+    --color-brand-soft: color-mix(in srgb, var(--color-brand) 22%, #000);
     --color-progress-soft: #2b2312;
     --color-submitted-soft: #16233d;
     --color-validated-soft: #123026;

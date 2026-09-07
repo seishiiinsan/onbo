@@ -6,7 +6,7 @@ import { requireTenant } from "@/lib/tenant";
 import { EmptyState, PageHeader } from "@/components/page-header";
 import { ProjectBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ProgressRing } from "@/components/ui/progress";
+import { ProgressBar } from "@/components/ui/progress";
 import { DashboardControls } from "./dashboard-controls";
 
 export const metadata = { title: "Projets" };
@@ -34,7 +34,6 @@ export default async function DashboardPage({
   const search = (params.q ?? "").trim().toLowerCase();
   const sort = params.s ?? "activity";
   const group = params.g ?? "none";
-  const view = params.v ?? "list";
   const page = Math.max(1, Number(params.p ?? 1) || 1);
 
   // Toute lecture produit est bornee au perimetre de la session (issues #6, #29).
@@ -168,12 +167,10 @@ export default async function DashboardPage({
               title="Aucun projet dans cette vue."
               hint="Changez de filtre ou videz la recherche."
             />
-          ) : view === "table" ? (
-            <ProjectTable projects={visible} />
           ) : group === "client" ? (
-            <GroupedList projects={visible} />
+            <GroupedTables projects={visible} />
           ) : (
-            <ProjectList projects={visible} />
+            <ProjectTable projects={visible} />
           )}
 
           {pages > 1 && (
@@ -246,36 +243,7 @@ function Flags({ project }: { project: Enriched }) {
   );
 }
 
-function ProjectList({ projects }: { projects: Enriched[] }) {
-  return (
-    <ul className="grid gap-2.5">
-      {projects.map((project) => (
-        <li key={project.id}>
-          <Link href={`/app/projects/${project.id}`} className="focusable block rounded-[var(--radius-card)]">
-            <article className="flex items-center gap-4 rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-line-strong)]">
-              <ProgressRing value={project.progress} />
-
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="truncate font-medium">{project.name}</span>
-                  <ProjectBadge status={project.status} />
-                  <Flags project={project} />
-                </div>
-                <p className="mt-1 text-xs text-[var(--color-muted)]">
-                  {project.clientLabel} · {project.steps.length} étape(s)
-                  {project.dueDate &&
-                    ` · échéance ${project.dueDate.toLocaleDateString("fr-FR")}`}
-                </p>
-              </div>
-            </article>
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function GroupedList({ projects }: { projects: Enriched[] }) {
+function GroupedTables({ projects }: { projects: Enriched[] }) {
   const groups = new Map<string, Enriched[]>();
   for (const project of projects) {
     const list = groups.get(project.clientLabel) ?? [];
@@ -288,7 +256,7 @@ function GroupedList({ projects }: { projects: Enriched[] }) {
       {[...groups.entries()].map(([client, list]) => (
         <section key={client}>
           <h2 className="section-label mb-2">{client}</h2>
-          <ProjectList projects={list} />
+          <ProjectTable projects={list} />
         </section>
       ))}
     </div>
@@ -298,14 +266,14 @@ function GroupedList({ projects }: { projects: Enriched[] }) {
 function ProjectTable({ projects }: { projects: Enriched[] }) {
   return (
     <div className="overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-line)]">
-      <table className="w-full min-w-[40rem] border-collapse bg-[var(--color-surface)] text-sm">
+      <table className="w-full min-w-[44rem] border-collapse bg-[var(--color-surface)] text-sm">
         <thead>
           <tr className="border-b border-[var(--color-line)] text-left">
             <th className="px-4 py-2.5 font-medium">Projet</th>
             <th className="px-4 py-2.5 font-medium">Client</th>
             <th className="px-4 py-2.5 font-medium">Statut</th>
             <th className="px-4 py-2.5 font-medium">Échéance</th>
-            <th className="px-4 py-2.5 text-right font-medium">Avancement</th>
+            <th className="w-40 px-4 py-2.5 font-medium">Avancement</th>
           </tr>
         </thead>
         <tbody>
@@ -336,8 +304,13 @@ function ProjectTable({ projects }: { projects: Enriched[] }) {
                   ? project.dueDate.toLocaleDateString("fr-FR")
                   : "—"}
               </td>
-              <td className="px-4 py-2.5 text-right tabular-nums">
-                {project.progress} %
+              <td className="px-4 py-2.5">
+                <span className="flex items-center gap-2">
+                  <ProgressBar value={project.progress} className="w-24" />
+                  <span className="w-9 shrink-0 text-right text-xs tabular-nums text-[var(--color-muted)]">
+                    {project.progress} %
+                  </span>
+                </span>
               </td>
             </tr>
           ))}

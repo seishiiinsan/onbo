@@ -88,3 +88,22 @@ export async function switchAgency(agencyId: string) {
   revalidatePath("/app");
   redirect("/app");
 }
+
+/** Nom affiche de la personne connectee, utilise dans le menu du rail. */
+export async function updateProfile(
+  _prev: AgencyState,
+  formData: FormData,
+): Promise<AgencyState> {
+  const user = await requireUser();
+  const name = String(formData.get("name") ?? "").trim();
+
+  if (name.length > 80) return { error: "Nom trop long." };
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { name: name || null },
+  });
+
+  revalidatePath("/app/settings");
+  return {};
+}

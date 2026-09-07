@@ -119,7 +119,7 @@ export function StepCard({
           type="button"
           onClick={onToggle}
           aria-expanded={open}
-          className="focusable min-w-0 flex-1 rounded-lg text-left"
+          className="focusable min-w-0 flex-1 self-stretch rounded-lg text-left"
         >
           <span className="flex flex-wrap items-center gap-2">
             <StepIcon kind={step.kind} />
@@ -137,7 +137,7 @@ export function StepCard({
 
           <span className="mt-1.5 block text-xs text-[var(--color-muted)]">
             {step.assets.length} fichier(s) · {step.credentials.length} accès ·{" "}
-            {step.comments.length} message(s) · {open ? "réduire" : "ouvrir"}
+            {step.comments.length} message(s)
           </span>
         </button>
 

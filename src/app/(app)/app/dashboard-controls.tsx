@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { LayoutGrid, Table2 } from "lucide-react";
 import { Input, Select } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +25,6 @@ export function DashboardControls({
   const params = useSearchParams();
 
   const current = params.get("f") ?? "actifs";
-  const view = params.get("v") ?? "list";
   const group = params.get("g") ?? "none";
   const sort = params.get("s") ?? "activity";
 
@@ -99,36 +97,6 @@ export function DashboardControls({
           <option value="client">Par client</option>
         </Select>
 
-        <div className="ml-auto flex gap-0.5 rounded-lg border border-[var(--color-line)] p-0.5">
-          <button
-            type="button"
-            aria-label="Vue liste"
-            aria-pressed={view === "list"}
-            onClick={() => update("v", "list")}
-            className={cn(
-              "focusable rounded-md p-1.5",
-              view === "list"
-                ? "bg-[var(--color-brand-soft)] text-[var(--color-brand-ink)]"
-                : "text-[var(--color-muted)]",
-            )}
-          >
-            <LayoutGrid size={14} />
-          </button>
-          <button
-            type="button"
-            aria-label="Vue tableau"
-            aria-pressed={view === "table"}
-            onClick={() => update("v", "table")}
-            className={cn(
-              "focusable rounded-md p-1.5",
-              view === "table"
-                ? "bg-[var(--color-brand-soft)] text-[var(--color-brand-ink)]"
-                : "text-[var(--color-muted)]",
-            )}
-          >
-            <Table2 size={14} />
-          </button>
-        </div>
       </div>
     </div>
   );

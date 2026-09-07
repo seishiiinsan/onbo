@@ -37,7 +37,7 @@ export function TeamPanel({
   const [busy, startTransition] = useTransition();
 
   return (
-    <Card className="max-w-lg">
+    <Card>
       <CardHeader>
         <CardTitle>Équipe</CardTitle>
       </CardHeader>

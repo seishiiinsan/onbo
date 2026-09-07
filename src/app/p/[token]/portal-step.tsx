@@ -97,8 +97,8 @@ export function PortalStep({
             </span>
           )}
         </span>
-        <span className="no-print shrink-0 text-xs text-[var(--color-muted)]">
-          {open ? t.collapse : t.expand}
+        <span className="no-print shrink-0 text-[var(--color-muted)]" aria-hidden>
+          {open ? "−" : "+"}
         </span>
       </button>
 

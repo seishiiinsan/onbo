@@ -20,7 +20,7 @@ export function NewProjectForm() {
   const [state, action, pending] = useActionState(createProject, initial);
 
   return (
-    <Card className="max-w-xl">
+    <Card className="max-w-2xl">
       <CardContent>
         <form action={action}>
           <Label htmlFor="name">Nom du projet</Label>

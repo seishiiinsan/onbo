@@ -1,12 +1,26 @@
 import Link from "next/link";
-import { Check, KeyRound, Link2, ShieldCheck } from "lucide-react";
+import {
+  Bell,
+  Check,
+  Clock,
+  FileStack,
+  KeyRound,
+  Link2,
+  ListChecks,
+  Lock,
+  MessagesSquare,
+  ScrollText,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { LogoMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 
 const STEPS = [
   {
     title: "Vous créez le projet",
-    body: "La checklist assets, accès, brief et contenus est déjà prête. Vous ajustez en deux minutes.",
+    body: "La checklist assets, accès, brief et contenus est déjà prête. Vous ajustez en deux minutes, vous fixez une échéance.",
   },
   {
     title: "Vous envoyez un lien",
@@ -18,21 +32,126 @@ const STEPS = [
   },
 ];
 
-const ARGUMENTS = [
-  {
-    icon: KeyRound,
-    title: "Coffre d'accès natif",
-    body: "Les identifiants hébergeur, CMS et réseaux arrivent chiffrés, pas dans un fil WhatsApp. Chaque lecture est tracée.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Français, RGPD-clean",
-    body: "Données hébergées en France, sous-traitance documentée, export et suppression sur demande.",
-  },
+const FEATURES = [
   {
     icon: Link2,
-    title: "Zéro friction client",
-    body: "Un lien suffit. Vos clients ne créent rien, n'installent rien, et retrouvent leur espace quand ils veulent.",
+    title: "Portail client brandé",
+    body: "Votre logo, votre couleur, votre nom. Un lien révocable, aucun compte à créer côté client.",
+  },
+  {
+    icon: ListChecks,
+    title: "Checklist par étapes",
+    body: "Assets, accès, brief, contenus. Étapes obligatoires ou optionnelles, réordonnables, avec motif de blocage visible du client.",
+  },
+  {
+    icon: KeyRound,
+    title: "Coffre d'accès chiffré",
+    body: "Hébergeur, CMS, réseaux : le client dépose, c'est chiffré à la réception. Révélation une par une, chaque lecture tracée.",
+  },
+  {
+    icon: FileStack,
+    title: "Dépôt de fichiers",
+    body: "Glisser-déposer, envois multiples, aperçu des images, téléchargement groupé en ZIP.",
+  },
+  {
+    icon: Bell,
+    title: "Relances automatiques",
+    body: "Délai réglable par projet, garde-fou anti-spam, désactivable en un clic.",
+  },
+  {
+    icon: Users,
+    title: "Rôles et affectations",
+    body: "Directeurs de projet sur tout l'espace, membres sur leurs projets seulement. L'accès au coffre se décide personne par personne.",
+  },
+  {
+    icon: MessagesSquare,
+    title: "Échanges par étape",
+    body: "Les questions restent au bon endroit. Vos notes internes ne sortent jamais côté client.",
+  },
+  {
+    icon: ScrollText,
+    title: "Journal d'activité",
+    body: "Qui a déposé quoi, qui a validé, qui a consulté quel accès. Utile en suivi, décisif en litige.",
+  },
+];
+
+const ROADMAP = [
+  "Templates d'onboarding réutilisables",
+  "Signature de devis dans le portail",
+  "Alertes d'expiration sur les accès et les domaines",
+  "Intégrations Slack, Notion, Drive",
+];
+
+const PLANS = [
+  {
+    name: "Solo",
+    price: "29 €",
+    detail: "par mois",
+    pitch: "Freelance ou studio d'une personne.",
+    features: [
+      "5 projets actifs",
+      "Portail brandé illimité",
+      "Coffre d'accès chiffré",
+      "Relances automatiques",
+    ],
+  },
+  {
+    name: "Studio",
+    price: "99 €",
+    detail: "par mois",
+    pitch: "L'équipe de 3 à 15 personnes. Le plus choisi.",
+    features: [
+      "Projets illimités",
+      "Rôles et affectations par projet",
+      "Journal d'activité complet",
+      "Support prioritaire",
+    ],
+    featured: true,
+  },
+  {
+    name: "Agence",
+    price: "149 €",
+    detail: "par mois",
+    pitch: "Plusieurs pôles, gros volume de clients.",
+    features: [
+      "Tout le plan Studio",
+      "Espaces multiples",
+      "Export et rétention sur mesure",
+      "Accompagnement à la mise en place",
+    ],
+  },
+];
+
+const FAQ = [
+  {
+    question: "Mes clients doivent-ils créer un compte ?",
+    answer:
+      "Non. Vous envoyez un lien, ils l'ouvrent, ils déposent. Le lien est révocable et régénérable à tout moment depuis le projet.",
+  },
+  {
+    question: "Où sont hébergées les données ?",
+    answer:
+      "En France, sur une infrastructure que nous opérons. La base n'est pas exposée sur Internet, et les sauvegardes restent dans l'Union européenne.",
+  },
+  {
+    question: "Comment sont protégés les accès transmis par le client ?",
+    answer:
+      "Chaque secret est chiffré en AES-256-GCM avec une clé stockée hors base. Il n'est jamais réaffiché en clair dans une liste : la révélation se fait une entrée à la fois, et chaque lecture est journalisée.",
+  },
+  {
+    question: "Un développeur peut-il voir les mots de passe du client ?",
+    answer:
+      "Seulement si vous le décidez. L'accès au coffre est un droit distinct, accordé projet par projet et personne par personne.",
+  },
+  {
+    question: "Que se passe-t-il si j'arrête mon abonnement ?",
+    answer:
+      "Vous exportez vos données et vos fichiers, puis nous les supprimons. Aucune rétention silencieuse.",
+  },
+  {
+    question: "Onbo remplace-t-il mon outil de gestion de projet ?",
+    answer:
+      "Non, et c'est volontaire. Onbo tient la frontière entre vous et le client. Vos tâches internes restent où elles sont.",
   },
 ];
 
@@ -80,25 +199,63 @@ function PortalPreview() {
   );
 }
 
+function SectionTitle({
+  eyebrow,
+  title,
+  lead,
+}: {
+  eyebrow: string;
+  title: string;
+  lead?: string;
+}) {
+  return (
+    <div className="mb-10 max-w-2xl">
+      <p className="section-label mb-2 text-[var(--color-brand)]">{eyebrow}</p>
+      <h2 className="font-display text-4xl leading-tight">{title}</h2>
+      {lead && (
+        <p className="mt-3 leading-relaxed text-[var(--color-muted)]">{lead}</p>
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
-        <span className="flex items-center gap-2 text-[var(--color-brand)]">
-          <LogoMark size={24} />
-          <span className="font-display text-xl text-[var(--color-ink)]">
-            Onbo
+      <header className="sticky top-0 z-30 border-b border-[var(--color-line)] bg-[var(--color-canvas)]/90 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+          <span className="flex items-center gap-2 text-[var(--color-brand)]">
+            <LogoMark size={24} />
+            <span className="font-display text-xl text-[var(--color-ink)]">
+              Onbo
+            </span>
           </span>
-        </span>
-        <Link href="/login" className="focusable rounded-full">
-          <Button variant="outline" size="sm">
-            Se connecter
-          </Button>
-        </Link>
+
+          <nav className="hidden items-center gap-6 text-sm text-[var(--color-muted)] md:flex">
+            <a href="#fonctionnalites" className="focusable rounded hover:text-[var(--color-ink)]">
+              Fonctionnalités
+            </a>
+            <a href="#securite" className="focusable rounded hover:text-[var(--color-ink)]">
+              Sécurité
+            </a>
+            <a href="#tarifs" className="focusable rounded hover:text-[var(--color-ink)]">
+              Tarifs
+            </a>
+            <a href="#faq" className="focusable rounded hover:text-[var(--color-ink)]">
+              FAQ
+            </a>
+          </nav>
+
+          <Link href="/login" className="focusable rounded-full">
+            <Button variant="outline" size="sm">
+              Se connecter
+            </Button>
+          </Link>
+        </div>
       </header>
 
       <main>
-        <section className="mx-auto grid max-w-5xl items-center gap-12 px-6 pb-24 pt-8 md:grid-cols-[1.1fr_1fr] md:pt-16">
+        <section className="mx-auto grid max-w-5xl items-center gap-12 px-6 pb-20 pt-12 md:grid-cols-[1.1fr_1fr] md:pt-20">
           <div>
             <p className="mb-5 inline-flex rounded-full bg-[var(--color-brand-soft)] px-3 py-1 text-xs font-medium text-[var(--color-brand-ink)]">
               Pour les agences web et studios
@@ -121,58 +278,262 @@ export default function Home() {
                 </Button>
               </Link>
               <span className="text-sm text-[var(--color-muted)]">
-                Sans carte bancaire · Sans mot de passe
+                14 jours d&apos;essai · sans carte bancaire
               </span>
             </div>
+
+            <p className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[var(--color-muted)]">
+              <span className="flex items-center gap-1.5">
+                <Lock size={13} /> Accès chiffrés
+              </span>
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck size={13} /> Hébergé en France
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Clock size={13} /> Prêt en 2 minutes
+              </span>
+            </p>
           </div>
 
           <PortalPreview />
         </section>
 
+        {/* Avant / apres */}
         <section className="border-y border-[var(--color-line)] bg-[var(--color-surface)]">
           <div className="mx-auto max-w-5xl px-6 py-16">
-            <h2 className="font-display text-3xl">Trois étapes, puis plus rien à faire</h2>
-            <ol className="mt-8 grid gap-8 md:grid-cols-3">
-              {STEPS.map((step, index) => (
-                <li key={step.title}>
-                  <span className="font-display text-3xl text-[var(--color-brand)]">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <p className="mt-2 font-medium">{step.title}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-[var(--color-muted)]">
-                    {step.body}
-                  </p>
-                </li>
-              ))}
-            </ol>
+            <SectionTitle
+              eyebrow="Le problème"
+              title="La collecte, c'est 5 à 10 h perdues par client."
+            />
+
+            <div className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-line)] md:grid-cols-2">
+              <div className="bg-[var(--color-canvas)] p-6">
+                <p className="mb-4 font-medium">Sans Onbo</p>
+                <ul className="space-y-2.5 text-sm text-[var(--color-muted)]">
+                  {[
+                    "Le brief est éclaté entre mail, WhatsApp et Drive",
+                    "Les accès arrivent en clair dans une conversation",
+                    "Vous relancez trois fois, à la main",
+                    "Personne ne sait ce qui manque encore",
+                    "Le projet démarre avec deux semaines de retard",
+                  ].map((line) => (
+                    <li key={line} className="flex gap-2.5">
+                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--color-muted)]" />
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="bg-[var(--color-surface)] p-6">
+                <p className="mb-4 font-medium">Avec Onbo</p>
+                <ul className="space-y-2.5 text-sm">
+                  {[
+                    "Un lien unique, un portail à vos couleurs",
+                    "Les accès arrivent chiffrés, jamais par email",
+                    "Les relances partent toutes seules",
+                    "L'avancement est lisible des deux côtés",
+                    "Vous démarrez avec un dossier complet",
+                  ].map((line) => (
+                    <li key={line} className="flex gap-2.5">
+                      <Check
+                        size={15}
+                        className="mt-0.5 shrink-0 text-[var(--color-validated)]"
+                      />
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
         </section>
 
+        {/* Etapes */}
         <section className="mx-auto max-w-5xl px-6 py-16">
-          <h2 className="font-display text-3xl">
-            Ce que les outils américains ne font pas
-          </h2>
-          <div className="mt-8 grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-line)] md:grid-cols-3">
-            {ARGUMENTS.map((argument) => {
-              const Icon = argument.icon;
-              return (
+          <SectionTitle
+            eyebrow="Comment ça marche"
+            title="Trois étapes, puis plus rien à faire"
+          />
+          <ol className="grid gap-8 md:grid-cols-3">
+            {STEPS.map((step, index) => (
+              <li key={step.title}>
+                <span className="font-display text-3xl text-[var(--color-brand)]">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <p className="mt-2 font-medium">{step.title}</p>
+                <p className="mt-1 text-sm leading-relaxed text-[var(--color-muted)]">
+                  {step.body}
+                </p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* Fonctionnalites */}
+        <section
+          id="fonctionnalites"
+          className="border-y border-[var(--color-line)] bg-[var(--color-surface)]"
+        >
+          <div className="mx-auto max-w-5xl px-6 py-16">
+            <SectionTitle
+              eyebrow="Fonctionnalités"
+              title="Tout ce qu'il faut pour ne plus courir après un client"
+              lead="Pas un outil de gestion de projet de plus : Onbo tient uniquement la frontière entre votre agence et vos clients."
+            />
+
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              {FEATURES.map((feature) => {
+                const Icon = feature.icon;
+                return (
+                  <article key={feature.title}>
+                    <Icon size={20} className="text-[var(--color-brand)]" />
+                    <p className="mt-3 font-medium">{feature.title}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-[var(--color-muted)]">
+                      {feature.body}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="mt-12 rounded-[var(--radius-card)] border border-dashed border-[var(--color-line-strong)] p-6">
+              <p className="flex items-center gap-2 font-medium">
+                <Sparkles size={16} className="text-[var(--color-brand)]" />
+                En cours de construction
+              </p>
+              <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[var(--color-muted)]">
+                {ROADMAP.map((item) => (
+                  <li key={item}>· {item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Securite */}
+        <section id="securite" className="mx-auto max-w-5xl px-6 py-16">
+          <SectionTitle
+            eyebrow="Sécurité et conformité"
+            title="Vous manipulez les clés de la maison de vos clients."
+            lead="Récupérer des accès proprement est la partie la plus sensible de l'onboarding. C'est celle que nous avons traitée en premier."
+          />
+
+          <div className="grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-line)] bg-[var(--color-line)] md:grid-cols-3">
+            {[
+              {
+                title: "Chiffrement des secrets",
+                body: "AES-256-GCM, clé conservée hors base. Un secret n'apparaît jamais dans une liste : il se révèle une entrée à la fois.",
+              },
+              {
+                title: "Cloisonnement strict",
+                body: "Chaque requête est bornée à votre agence. Un projet hors périmètre répond « introuvable », sans révéler son existence.",
+              },
+              {
+                title: "Traçabilité",
+                body: "Dépôts, validations, révélations de secrets : tout est horodaté et attribué, côté agence comme côté client.",
+              },
+            ].map((block) => (
+              <article key={block.title} className="bg-[var(--color-surface)] p-6">
+                <p className="font-medium">{block.title}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-muted)]">
+                  {block.body}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          <p className="mt-6 text-sm text-[var(--color-muted)]">
+            Hébergement en France, base non exposée sur Internet, export et
+            suppression des données sur demande.
+          </p>
+        </section>
+
+        {/* Tarifs */}
+        <section
+          id="tarifs"
+          className="border-y border-[var(--color-line)] bg-[var(--color-surface)]"
+        >
+          <div className="mx-auto max-w-5xl px-6 py-16">
+            <SectionTitle
+              eyebrow="Tarifs"
+              title="Moins cher qu'une heure de chef de projet"
+              lead="Facturé au mois, sans engagement. 14 jours d'essai, sans carte bancaire."
+            />
+
+            <div className="grid gap-4 md:grid-cols-3">
+              {PLANS.map((plan) => (
                 <article
-                  key={argument.title}
-                  className="bg-[var(--color-surface)] p-6"
+                  key={plan.name}
+                  className={`rounded-[var(--radius-card)] border p-6 ${
+                    plan.featured
+                      ? "border-[var(--color-brand)] bg-[var(--color-brand-soft)]"
+                      : "border-[var(--color-line)] bg-[var(--color-canvas)]"
+                  }`}
                 >
-                  <Icon size={20} className="text-[var(--color-brand)]" />
-                  <p className="mt-3 font-medium">{argument.title}</p>
-                  <p className="mt-1 text-sm leading-relaxed text-[var(--color-muted)]">
-                    {argument.body}
+                  <p className="font-medium">{plan.name}</p>
+                  <p className="mt-3 font-display text-4xl">
+                    {plan.price}
+                    <span className="ml-1 text-sm text-[var(--color-muted)]">
+                      {plan.detail}
+                    </span>
                   </p>
+                  <p className="mt-1 text-sm text-[var(--color-muted)]">
+                    {plan.pitch}
+                  </p>
+
+                  <ul className="mt-5 space-y-2 text-sm">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex gap-2">
+                        <Check
+                          size={15}
+                          className="mt-0.5 shrink-0 text-[var(--color-validated)]"
+                        />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <Link
+                    href="/login"
+                    className="focusable mt-6 block rounded-full"
+                  >
+                    <Button
+                      variant={plan.featured ? "accent" : "outline"}
+                      className="w-full"
+                    >
+                      Commencer l&apos;essai
+                    </Button>
+                  </Link>
                 </article>
-              );
-            })}
+              ))}
+            </div>
+
+            <p className="mt-6 text-xs text-[var(--color-muted)]">
+              Tarifs hors taxes. Les plans évolueront avec le produit : les
+              premiers inscrits gardent leur tarif d&apos;entrée.
+            </p>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="faq" className="mx-auto max-w-5xl px-6 py-16">
+          <SectionTitle eyebrow="Questions" title="Ce qu'on nous demande le plus" />
+
+          <div className="grid gap-x-10 gap-y-8 md:grid-cols-2">
+            {FAQ.map((entry) => (
+              <article key={entry.question}>
+                <p className="font-medium">{entry.question}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-muted)]">
+                  {entry.answer}
+                </p>
+              </article>
+            ))}
           </div>
         </section>
 
         <section className="mx-auto max-w-5xl px-6 pb-24">
-          <div className="rounded-[var(--radius-card)] bg-[var(--color-ink)] px-8 py-14 text-center text-white">
+          <div className="rounded-[var(--radius-card)] bg-[var(--color-ink)] px-8 py-14 text-center">
             <h2 className="font-display text-3xl text-white">
               Votre prochain client mérite mieux qu&apos;un mail de relance.
             </h2>
@@ -190,13 +551,61 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-[var(--color-line)]">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-8 text-xs text-[var(--color-muted)]">
-          <span className="flex items-center gap-2">
-            <LogoMark size={16} />
-            Onbo — portail d&apos;onboarding client
-          </span>
-          <span>Données hébergées en France</span>
+        <div className="mx-auto grid max-w-5xl gap-8 px-6 py-10 sm:grid-cols-3">
+          <div>
+            <span className="flex items-center gap-2 text-[var(--color-brand)]">
+              <LogoMark size={18} />
+              <span className="font-display text-lg text-[var(--color-ink)]">
+                Onbo
+              </span>
+            </span>
+            <p className="mt-2 text-xs leading-relaxed text-[var(--color-muted)]">
+              Le portail d&apos;onboarding client des agences web.
+              Données hébergées en France.
+            </p>
+          </div>
+
+          <div className="text-sm">
+            <p className="section-label mb-2">Produit</p>
+            <ul className="space-y-1.5 text-[var(--color-muted)]">
+              <li>
+                <a href="#fonctionnalites" className="focusable rounded hover:text-[var(--color-ink)]">
+                  Fonctionnalités
+                </a>
+              </li>
+              <li>
+                <a href="#tarifs" className="focusable rounded hover:text-[var(--color-ink)]">
+                  Tarifs
+                </a>
+              </li>
+              <li>
+                <a href="#securite" className="focusable rounded hover:text-[var(--color-ink)]">
+                  Sécurité
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div className="text-sm">
+            <p className="section-label mb-2">Accès</p>
+            <ul className="space-y-1.5 text-[var(--color-muted)]">
+              <li>
+                <Link href="/login" className="focusable rounded hover:text-[var(--color-ink)]">
+                  Connexion
+                </Link>
+              </li>
+              <li>
+                <Link href="/login" className="focusable rounded hover:text-[var(--color-ink)]">
+                  Créer un espace
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
+
+        <p className="border-t border-[var(--color-line)] px-6 py-5 text-center text-xs text-[var(--color-muted)]">
+          © {new Date().getFullYear()} Onbo
+        </p>
       </footer>
     </div>
   );

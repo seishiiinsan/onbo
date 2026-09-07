@@ -11,8 +11,9 @@ export default async function AppLayout({
 }) {
   const ctx = await requireTenant();
 
-  const [agency, agencies, awaitingCount] = await Promise.all([
+  const [agency, user, agencies, awaitingCount] = await Promise.all([
     prisma.agency.findUniqueOrThrow({ where: { id: ctx.agencyId } }),
+    prisma.user.findUniqueOrThrow({ where: { id: ctx.userId } }),
     listUserAgencies(ctx.userId),
     prisma.onboardingStep.count({
       where: { status: "SUBMITTED", project: projectScope(ctx) },
@@ -32,6 +33,7 @@ export default async function AppLayout({
         logoUrl={agency.logoUrl}
         accentColor={agency.accentColor}
         email={ctx.email}
+        userName={user.name ?? ctx.email.split("@")[0]}
         roleLabel={AGENCY_ROLE_LABEL[ctx.role]}
         awaitingCount={awaitingCount}
         agencies={agencies.map((agency) => ({
