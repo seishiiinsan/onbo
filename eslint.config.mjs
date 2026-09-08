@@ -17,6 +17,8 @@ const config = [
       "node_modules/**",
       "playwright-report/**",
       "test-results/**",
+      // Genere par Next a chaque build : rien a y corriger.
+      "next-env.d.ts",
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
