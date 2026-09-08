@@ -29,12 +29,23 @@ services:
       UPLOAD_DIR: /app/uploads
       ONBO_ENCRYPTION_KEY: ${ONBO_ENCRYPTION_KEY:?cle de chiffrement manquante}
       CRON_SECRET: ${CRON_SECRET:-}
+      # Emails (issue #29) : console par defaut, sinon brevo/postmark/scaleway.
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      EMAIL_FROM: ${EMAIL_FROM:-Onbo <onboarding@localhost>}
+      EMAIL_WEBHOOK_SECRET: ${EMAIL_WEBHOOK_SECRET:-}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      POSTMARK_TOKEN: ${POSTMARK_TOKEN:-}
+      POSTMARK_STREAM: ${POSTMARK_STREAM:-outbound}
+      SCALEWAY_SECRET_KEY: ${SCALEWAY_SECRET_KEY:-}
+      SCALEWAY_PROJECT_ID: ${SCALEWAY_PROJECT_ID:-}
+      SCALEWAY_REGION: ${SCALEWAY_REGION:-fr-par}
     volumes:
       - uploads:/app/uploads
     ports:
       - "${APP_BIND:-0.0.0.0}:${APP_PORT:-3000}:3000"
 
-  # Declencheur des relances : un appel par heure, pas d'ordonnanceur externe.
+  # Declencheur des taches planifiees : relances (horaire) et file d'emails
+  # (toutes les minutes, pour la reprise sur echec).
   cron:
     image: alpine:3.20
     restart: unless-stopped
@@ -44,9 +55,14 @@ services:
       CRON_SECRET: ${CRON_SECRET:-}
     command: >
       sh -c "apk add --no-cache curl >/dev/null &&
+      tick=0;
       while true; do
-        sleep 3600;
-        curl -s -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/cron/reminders >/dev/null || true;
+        sleep 60;
+        tick=$$((tick + 1));
+        curl -s -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/cron/emails >/dev/null || true;
+        if [ $$((tick % 60)) -eq 0 ]; then
+          curl -s -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/cron/reminders >/dev/null || true;
+        fi;
       done"
 
 volumes:

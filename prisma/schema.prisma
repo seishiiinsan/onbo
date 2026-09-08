@@ -323,3 +323,52 @@ model OnboardingStep {
 
   @@index([projectId])
 }
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+  BOUNCED
+}
+
+enum EmailCategory {
+  LOGIN
+  PORTAL
+  REMINDER
+  NOTIFICATION
+  OTHER
+}
+
+/// Journal et file d'envoi des emails (issue #29).
+///
+/// Tout message passe par cette table : elle sert a la fois de file avec
+/// reprise sur echec et de trace consultable (envoye, echoue, rebond).
+model EmailMessage {
+  id            String        @id @default(cuid())
+  to            String
+  subject       String
+  text          String
+  html          String?
+  replyTo       String?
+  category      EmailCategory @default(OTHER)
+  status        EmailStatus   @default(PENDING)
+  attempts      Int           @default(0)
+  /// Null quand plus aucune tentative n'est prevue.
+  nextAttemptAt DateTime?     @default(now())
+  provider      String?
+  providerId    String?
+  lastError     String?
+  sentAt        DateTime?
+  bouncedAt     DateTime?
+  bounceReason  String?
+  /// Rattachements libres : pas de cle etrangere, le journal survit au projet.
+  agencyId      String?
+  projectId     String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([providerId])
+  @@index([projectId])
+  @@index([to])
+}
