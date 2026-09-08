@@ -3,7 +3,12 @@ import { logActivity } from "@/lib/activity";
 import { scanBuffer } from "@/lib/antivirus";
 import { prisma } from "@/lib/prisma";
 import { clearUpload } from "@/lib/upload-guard";
-import { openFileStream, removeFile, safeFilename, statFile } from "@/lib/storage";
+import {
+  openFileStream,
+  removeFile,
+  safeFilename,
+  statFile,
+} from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -60,7 +65,9 @@ export async function POST(request: NextRequest) {
     if (!scan.clean) {
       await removeFile(storageKey);
       return NextResponse.json(
-        { error: `Fichier refusé par l'analyse antivirus (${scan.signature}).` },
+        {
+          error: `Fichier refusé par l'analyse antivirus (${scan.signature}).`,
+        },
         { status: 422 },
       );
     }

@@ -124,16 +124,16 @@ export function Sidebar({
       {agencies.length > 1 && (
         <div>
           {!compact ? (
-          <select
-            aria-label="Espace agence"
-            value={agencies.find((agency) => agency.active)?.id}
-            disabled={switching}
-            onChange={(event) => {
-              const id = event.target.value;
-              startSwitch(() => {
-                void switchAgency(id);
-              });
-            }}
+            <select
+              aria-label="Espace agence"
+              value={agencies.find((agency) => agency.active)?.id}
+              disabled={switching}
+              onChange={(event) => {
+                const id = event.target.value;
+                startSwitch(() => {
+                  void switchAgency(id);
+                });
+              }}
               className="focusable w-full rounded-xl border border-[var(--color-line)] bg-[var(--color-surface)] p-2.5 text-sm"
             >
               {agencies.map((agency) => (
@@ -212,7 +212,6 @@ export function Sidebar({
             );
           })}
         </ul>
-
       </nav>
 
       <div className="space-y-2 border-t border-[var(--color-line)] pt-3">

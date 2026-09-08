@@ -75,7 +75,10 @@ export default async function DashboardPage({
     attente: enriched.filter((p) => p.awaiting > 0 && p.status !== "ARCHIVED")
       .length,
     bloques: enriched.filter(
-      (p) => (p.stale || p.overdue) && p.status !== "ARCHIVED" && p.status !== "COMPLETED",
+      (p) =>
+        (p.stale || p.overdue) &&
+        p.status !== "ARCHIVED" &&
+        p.status !== "COMPLETED",
     ).length,
     termines: enriched.filter((p) => p.status === "COMPLETED").length,
     archives: enriched.filter((p) => p.status === "ARCHIVED").length,
@@ -87,7 +90,9 @@ export default async function DashboardPage({
     if (filter === "termines") return project.status === "COMPLETED";
     if (filter === "attente") return project.awaiting > 0;
     if (filter === "bloques")
-      return (project.stale || project.overdue) && project.status !== "COMPLETED";
+      return (
+        (project.stale || project.overdue) && project.status !== "COMPLETED"
+      );
     return project.status !== "COMPLETED";
   };
 

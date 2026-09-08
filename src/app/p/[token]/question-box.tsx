@@ -35,7 +35,9 @@ export function QuestionBox({
         action={async (formData) => {
           await action(formData);
           draft.clear();
-          toast({ message: sendLabel === "Send" ? "Message sent." : "Message envoyé." });
+          toast({
+            message: sendLabel === "Send" ? "Message sent." : "Message envoyé.",
+          });
         }}
         className="mt-3"
       >
@@ -49,7 +51,9 @@ export function QuestionBox({
           onChange={(event) => draft.set(event.target.value)}
         />
         {state.error && (
-          <p className="mt-1 text-sm text-[var(--color-danger)]">{state.error}</p>
+          <p className="mt-1 text-sm text-[var(--color-danger)]">
+            {state.error}
+          </p>
         )}
         <Button type="submit" size="sm" className="mt-2" disabled={pending}>
           {sendLabel}

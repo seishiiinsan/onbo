@@ -56,8 +56,13 @@ export function PrivacyPanel({
         </div>
 
         {canManage && (
-          <form action={clientAction} className="border-t border-[var(--color-line)] pt-5">
-            <Label htmlFor="rgpd-email">Supprimer les données d&apos;un contact</Label>
+          <form
+            action={clientAction}
+            className="border-t border-[var(--color-line)] pt-5"
+          >
+            <Label htmlFor="rgpd-email">
+              Supprimer les données d&apos;un contact
+            </Label>
             <p className="mb-2 text-xs text-[var(--color-muted)]">
               Identité, rattachements et emails envoyés. Les fichiers déposés
               restent au projet, dont votre agence est responsable de
@@ -71,7 +76,12 @@ export function PrivacyPanel({
                 placeholder="contact@client.fr"
                 required
               />
-              <Button type="submit" size="sm" variant="outline" disabled={deletingClient}>
+              <Button
+                type="submit"
+                size="sm"
+                variant="outline"
+                disabled={deletingClient}
+              >
                 {deletingClient ? "Suppression…" : "Supprimer"}
               </Button>
             </div>
@@ -89,12 +99,15 @@ export function PrivacyPanel({
         )}
 
         {isOwner && (
-          <form action={spaceAction} className="border-t border-[var(--color-line)] pt-5">
+          <form
+            action={spaceAction}
+            className="border-t border-[var(--color-line)] pt-5"
+          >
             <Label htmlFor="rgpd-confirm">Supprimer l&apos;espace</Label>
             <p className="mb-2 text-xs text-[var(--color-muted)]">
-              Projets, fichiers, coffre et journal sont effacés
-              immédiatement. Il n&apos;y a pas de corbeille. Recopiez «{" "}
-              {agencyName} » pour confirmer.
+              Projets, fichiers, coffre et journal sont effacés immédiatement.
+              Il n&apos;y a pas de corbeille. Recopiez « {agencyName} » pour
+              confirmer.
             </p>
             <div className="flex gap-2">
               <Input
@@ -103,7 +116,12 @@ export function PrivacyPanel({
                 placeholder={agencyName}
                 required
               />
-              <Button type="submit" size="sm" variant="outline" disabled={deletingSpace}>
+              <Button
+                type="submit"
+                size="sm"
+                variant="outline"
+                disabled={deletingSpace}
+              >
                 {deletingSpace ? "Suppression…" : "Supprimer"}
               </Button>
             </div>

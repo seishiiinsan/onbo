@@ -15,11 +15,11 @@ client actif. **Le siège est retenu.**
 
 Les formules affichées sur la landing sont confirmées :
 
-| Formule | Prix | Sièges inclus |
-|---------|------|---------------|
-| Solo | 29 € / mois | 1 |
-| Studio | 99 € / mois | 5 |
-| Agence | 149 € / mois | 15 |
+| Formule | Prix         | Sièges inclus |
+| ------- | ------------ | ------------- |
+| Solo    | 29 € / mois  | 1             |
+| Studio  | 99 € / mois  | 5             |
+| Agence  | 149 € / mois | 15            |
 
 Les limites associées (projets, clients) sont appliquées par l'issue #42 : ce
 lot-ci encaisse, l'autre contraint.
@@ -59,12 +59,12 @@ Endpoint : `POST /api/webhooks/stripe`, signature vérifiée (schéma `v1`,
 tolérance 5 minutes). Une signature non vérifiée reviendrait à laisser
 n'importe qui déclarer un paiement réussi.
 
-| Événement | Effet |
-|-----------|-------|
-| `checkout.session.completed` | rattache le client Stripe à l'agence, synchronise |
-| `customer.subscription.created/updated/deleted` | recopie statut, formule, sièges, échéance |
-| `invoice.payment_failed` | passe en `PAST_DUE` |
-| `invoice.paid` | ressort de `PAST_DUE` |
+| Événement                                       | Effet                                             |
+| ----------------------------------------------- | ------------------------------------------------- |
+| `checkout.session.completed`                    | rattache le client Stripe à l'agence, synchronise |
+| `customer.subscription.created/updated/deleted` | recopie statut, formule, sièges, échéance         |
+| `invoice.payment_failed`                        | passe en `PAST_DUE`                               |
+| `invoice.paid`                                  | ressort de `PAST_DUE`                             |
 
 Stripe reste la source de vérité des montants : la base ne recopie que ce dont
 l'application a besoin pour décider ce qui est ouvert.

@@ -120,8 +120,14 @@ export default async function ProjectPage({
 
   return (
     <>
-      <nav aria-label="Fil d'Ariane" className="mb-2 text-xs text-[var(--color-muted)]">
-        <Link href="/app" className="focusable rounded underline-offset-2 hover:underline">
+      <nav
+        aria-label="Fil d'Ariane"
+        className="mb-2 text-xs text-[var(--color-muted)]"
+      >
+        <Link
+          href="/app"
+          className="focusable rounded underline-offset-2 hover:underline"
+        >
           Projets
         </Link>
         <span aria-hidden> / </span>
@@ -136,7 +142,9 @@ export default async function ProjectPage({
       <ProjectToolbar
         projectId={project.id}
         submittedCount={submitted}
-        dueDate={project.dueDate ? project.dueDate.toISOString().slice(0, 10) : ""}
+        dueDate={
+          project.dueDate ? project.dueDate.toISOString().slice(0, 10) : ""
+        }
         canEdit={access.canEdit}
       />
 
@@ -145,7 +153,9 @@ export default async function ProjectPage({
           <ProgressBar value={progress} />
         </div>
         <p className="text-sm text-[var(--color-muted)]">
-          <span className="font-medium text-[var(--color-ink)]">{progress}%</span>{" "}
+          <span className="font-medium text-[var(--color-ink)]">
+            {progress}%
+          </span>{" "}
           · {project.steps.length} étape(s)
           {optional > 0 && ` (dont ${optional} optionnelle(s))`}
           {submitted > 0 && (
@@ -252,7 +262,9 @@ export default async function ProjectPage({
             hasActiveLink={Boolean(activeLink)}
             activeUrl={activeLink ? `/p/${activeLink.token}` : null}
             lastUsedAt={
-              activeLink?.lastUsedAt ? dateTime.format(activeLink.lastUsedAt) : null
+              activeLink?.lastUsedAt
+                ? dateTime.format(activeLink.lastUsedAt)
+                : null
             }
             contacts={project.clients.map((link) => ({
               id: link.id,
@@ -305,12 +317,13 @@ export default async function ProjectPage({
             enabled={project.remindersEnabled}
             days={project.reminderDays}
             lastReminderAt={
-              project.lastReminderAt ? dateTime.format(project.lastReminderAt) : null
+              project.lastReminderAt
+                ? dateTime.format(project.lastReminderAt)
+                : null
             }
           />
         </div>
       )}
-
     </>
   );
 }

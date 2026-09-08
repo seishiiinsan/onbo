@@ -73,7 +73,9 @@ function run(command, commandArgs, options = {}) {
     child.on("close", (code) =>
       code === 0
         ? resolve(Buffer.concat(out))
-        : reject(new Error(`${command} a échoué (${code}) : ${Buffer.concat(err)}`)),
+        : reject(
+            new Error(`${command} a échoué (${code}) : ${Buffer.concat(err)}`),
+          ),
     );
   });
 }

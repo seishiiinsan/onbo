@@ -35,7 +35,11 @@ export function AddStepForm({ projectId }: { projectId: string }) {
           </option>
         ))}
       </Select>
-      <Input name="description" placeholder="Description (option)" className="w-56" />
+      <Input
+        name="description"
+        placeholder="Description (option)"
+        className="w-56"
+      />
       <Button type="submit" size="sm" disabled={pending}>
         Ajouter
       </Button>

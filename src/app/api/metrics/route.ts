@@ -63,7 +63,11 @@ export async function GET(request: NextRequest) {
     ),
     line("onbo_email_queue_pending", "Emails en attente d'envoi", pending),
     line("onbo_uploads_24h", "Fichiers déposés sur 24 h", uploads),
-    line("onbo_storage_bytes", "Volume stocké, en octets", bytes._sum.size ?? 0),
+    line(
+      "onbo_storage_bytes",
+      "Volume stocké, en octets",
+      bytes._sum.size ?? 0,
+    ),
     line("onbo_reminders_24h", "Projets relancés sur 24 h", reminders),
     line("onbo_projects_active", "Projets en cours", projects),
     ...denials.map((row) =>

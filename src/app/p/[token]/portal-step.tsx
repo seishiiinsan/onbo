@@ -97,7 +97,10 @@ export function PortalStep({
             </span>
           )}
         </span>
-        <span className="no-print shrink-0 text-[var(--color-muted)]" aria-hidden>
+        <span
+          className="no-print shrink-0 text-[var(--color-muted)]"
+          aria-hidden
+        >
           {open ? "−" : "+"}
         </span>
       </button>
@@ -125,12 +128,7 @@ export function PortalStep({
             </>
           )}
 
-          <Messages
-            token={token}
-            step={step}
-            agencyName={agencyName}
-            t={t}
-          />
+          <Messages token={token} step={step} agencyName={agencyName} t={t} />
 
           {!locked && (
             <div className="no-print flex flex-wrap items-center gap-2 border-t border-[var(--color-line)] pt-4">
@@ -275,12 +273,24 @@ function Credentials({
             </Select>
             <Input name="url" placeholder="https://…" type="url" />
             <Input name="username" placeholder="Identifiant / username" />
-            <Input name="secret" type="password" placeholder="••••••••" required />
+            <Input
+              name="secret"
+              type="password"
+              placeholder="••••••••"
+              required
+            />
             {state.error && (
-              <p className="text-sm text-[var(--color-danger)]">{state.error}</p>
+              <p className="text-sm text-[var(--color-danger)]">
+                {state.error}
+              </p>
             )}
             <div className="flex gap-2">
-              <Button type="submit" size="sm" variant="accent" disabled={pending}>
+              <Button
+                type="submit"
+                size="sm"
+                variant="accent"
+                disabled={pending}
+              >
                 {t.sendAccess}
               </Button>
               <Button
@@ -335,7 +345,8 @@ function Messages({
               className="rounded-lg bg-[var(--color-canvas)] px-3 py-2 text-sm"
             >
               <p className="mb-0.5 text-[11px] text-[var(--color-muted)]">
-                {comment.author === "AGENCY" ? agencyName : t.you} · {comment.at}
+                {comment.author === "AGENCY" ? agencyName : t.you} ·{" "}
+                {comment.at}
               </p>
               <p className="whitespace-pre-wrap">{comment.body}</p>
             </li>
@@ -361,7 +372,9 @@ function Messages({
           onChange={(event) => draft.set(event.target.value)}
         />
         {state.error && (
-          <p className="mt-1 text-sm text-[var(--color-danger)]">{state.error}</p>
+          <p className="mt-1 text-sm text-[var(--color-danger)]">
+            {state.error}
+          </p>
         )}
         <Button type="submit" size="sm" className="mt-2" disabled={pending}>
           {t.send}

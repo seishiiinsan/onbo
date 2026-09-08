@@ -12,11 +12,7 @@
  * elle reprend ou elle s'etait arretee.
  */
 import { PrismaClient } from "@prisma/client";
-import {
-  createCipheriv,
-  createDecipheriv,
-  randomBytes,
-} from "node:crypto";
+import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
 const KEY_ENV = "ONBO_ENCRYPTION_KEY";
 const KEYS_ENV = "ONBO_ENCRYPTION_KEYS";
@@ -40,8 +36,12 @@ function keyring() {
     const trimmed = entry.trim();
     if (!trimmed) continue;
     const separator = trimmed.indexOf(":");
-    if (separator < 1) throw new Error(`${KEYS_ENV} attend « identifiant:base64 ».`);
-    keys.set(trimmed.slice(0, separator).trim(), decode("clé", trimmed.slice(separator + 1)));
+    if (separator < 1)
+      throw new Error(`${KEYS_ENV} attend « identifiant:base64 ».`);
+    keys.set(
+      trimmed.slice(0, separator).trim(),
+      decode("clé", trimmed.slice(separator + 1)),
+    );
   }
   if (keys.size === 0) throw new Error(`Aucune clé : renseignez ${KEYS_ENV}.`);
 
@@ -61,7 +61,9 @@ const batchSize = Number(
 const { keys, activeId } = keyring();
 const prisma = new PrismaClient();
 
-const total = await prisma.credential.count({ where: { keyId: { not: activeId } } });
+const total = await prisma.credential.count({
+  where: { keyId: { not: activeId } },
+});
 console.log(`Clé active : ${activeId}`);
 console.log(`Secrets à re-chiffrer : ${total}`);
 

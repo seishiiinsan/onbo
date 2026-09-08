@@ -3,25 +3,25 @@
 Issue #45. « RGPD-clean » est l'argument de vente central : il doit être vrai
 avant le premier euro encaissé.
 
-| Document | Ce qu'il couvre |
-|----------|-----------------|
-| `registre-traitements.md` | Registre du sous-traitant (art. 30.2) |
-| `politique-confidentialite.md` | Texte de la page publique |
-| `cgu.md` | Conditions générales d'utilisation et de vente |
-| `mentions-legales.md` | Éditeur, hébergeur, contacts |
-| `dpa.md` | Accord de sous-traitance à signer avec l'agence |
-| `sous-traitants.md` | Prestataires et régions |
-| `retention.md` | Durées de conservation et purge automatique |
+| Document                       | Ce qu'il couvre                                 |
+| ------------------------------ | ----------------------------------------------- |
+| `registre-traitements.md`      | Registre du sous-traitant (art. 30.2)           |
+| `politique-confidentialite.md` | Texte de la page publique                       |
+| `cgu.md`                       | Conditions générales d'utilisation et de vente  |
+| `mentions-legales.md`          | Éditeur, hébergeur, contacts                    |
+| `dpa.md`                       | Accord de sous-traitance à signer avec l'agence |
+| `sous-traitants.md`            | Prestataires et régions                         |
+| `retention.md`                 | Durées de conservation et purge automatique     |
 
 ## Ce que le produit sait faire
 
-| Demande | Où | Effet |
-|---------|-----|-------|
-| Export d'une agence | Réglages → Données personnelles, ou `GET /api/rgpd/export` | JSON complet, secrets exclus |
-| Export d'un client | `GET /api/rgpd/portal-export?token=…&email=…` | JSON de ses données |
-| Suppression d'un contact | Réglages → Données personnelles | Identité, rattachements, emails |
-| Suppression d'un espace | Réglages, réservé au propriétaire | Tout, immédiatement, sans corbeille |
-| Purge automatique | `/api/cron/retention`, une fois par jour | Cf. `retention.md` |
+| Demande                  | Où                                                         | Effet                               |
+| ------------------------ | ---------------------------------------------------------- | ----------------------------------- |
+| Export d'une agence      | Réglages → Données personnelles, ou `GET /api/rgpd/export` | JSON complet, secrets exclus        |
+| Export d'un client       | `GET /api/rgpd/portal-export?token=…&email=…`              | JSON de ses données                 |
+| Suppression d'un contact | Réglages → Données personnelles                            | Identité, rattachements, emails     |
+| Suppression d'un espace  | Réglages, réservé au propriétaire                          | Tout, immédiatement, sans corbeille |
+| Purge automatique        | `/api/cron/retention`, une fois par jour                   | Cf. `retention.md`                  |
 
 Les secrets du coffre ne sont jamais déchiffrés dans un export : on exporte
 leur existence, pas leur contenu. Un export qui recracherait les mots de passe

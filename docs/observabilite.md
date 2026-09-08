@@ -49,14 +49,14 @@ arrive dans une boîte que personne n'ouvre ne vaut pas mieux que pas d'alerte.
 `/api/metrics` au format Prometheus, fermé sans `METRICS_TOKEN` (jeton en
 `Authorization: Bearer` ou `?token=`) :
 
-| Métrique | Ce qu'elle dit |
-|----------|----------------|
-| `onbo_emails_24h{status}` | envois, échecs, rebonds |
-| `onbo_email_queue_pending` | file bloquée si ça monte |
-| `onbo_uploads_24h`, `onbo_storage_bytes` | dépôts et volume |
-| `onbo_reminders_24h` | relances effectivement parties |
-| `onbo_abuse_24h{kind}` | refus de débit |
-| `onbo_projects_active` | activité produit |
+| Métrique                                 | Ce qu'elle dit                 |
+| ---------------------------------------- | ------------------------------ |
+| `onbo_emails_24h{status}`                | envois, échecs, rebonds        |
+| `onbo_email_queue_pending`               | file bloquée si ça monte       |
+| `onbo_uploads_24h`, `onbo_storage_bytes` | dépôts et volume               |
+| `onbo_reminders_24h`                     | relances effectivement parties |
+| `onbo_abuse_24h{kind}`                   | refus de débit                 |
+| `onbo_projects_active`                   | activité produit               |
 
 ## Vérifier
 

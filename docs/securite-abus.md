@@ -6,14 +6,14 @@ chaque refus laisse une trace.
 
 ## Limites
 
-| Surface | Clé | Limite |
-|---------|-----|--------|
-| `/login` | IP (hachée) | 10 / 15 min |
-| `/login` | adresse visée | 5 / heure |
-| Portail — token inconnu | IP (hachée) | 20 / heure, puis 404 immédiat |
-| Portail — dépôt de fichier | token | 40 / heure |
-| Portail — message | token | 60 / heure |
-| Portail — autres actions | token | 200 / heure |
+| Surface                    | Clé           | Limite                        |
+| -------------------------- | ------------- | ----------------------------- |
+| `/login`                   | IP (hachée)   | 10 / 15 min                   |
+| `/login`                   | adresse visée | 5 / heure                     |
+| Portail — token inconnu    | IP (hachée)   | 20 / heure, puis 404 immédiat |
+| Portail — dépôt de fichier | token         | 40 / heure                    |
+| Portail — message          | token         | 60 / heure                    |
+| Portail — autres actions   | token         | 200 / heure                   |
 
 Le compteur vit en base (`RateCounter`) plutôt qu'en mémoire : il survit à un
 redémarrage et reste juste si l'application tourne en plusieurs exemplaires.

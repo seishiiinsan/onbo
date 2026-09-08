@@ -52,7 +52,10 @@ async function post(url: string, init: RequestInit) {
   if (!response.ok) {
     // 4xx = message ou configuration invalide, inutile de reessayer.
     const retryable = response.status === 429 || response.status >= 500;
-    throw new SendError(`HTTP ${response.status} — ${body.slice(0, 300)}`, retryable);
+    throw new SendError(
+      `HTTP ${response.status} — ${body.slice(0, 300)}`,
+      retryable,
+    );
   }
 
   try {
@@ -101,7 +104,8 @@ class PostmarkProvider implements EmailProvider {
 
   async send(mail: Mail): Promise<SendResult> {
     // Compte europeen : api-eu.postmarkapp.com. Surchargeable si besoin.
-    const base = process.env.POSTMARK_API_URL ?? "https://api-eu.postmarkapp.com";
+    const base =
+      process.env.POSTMARK_API_URL ?? "https://api-eu.postmarkapp.com";
     const payload = await post(`${base}/email`, {
       method: "POST",
       headers: {

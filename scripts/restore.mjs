@@ -31,7 +31,10 @@ function decrypt(buffer) {
   const tag = buffer.subarray(12, 28);
   const decipher = createDecipheriv("aes-256-gcm", secret, iv);
   decipher.setAuthTag(tag);
-  return Buffer.concat([decipher.update(buffer.subarray(28)), decipher.final()]);
+  return Buffer.concat([
+    decipher.update(buffer.subarray(28)),
+    decipher.final(),
+  ]);
 }
 
 async function download(objectKey) {
@@ -49,7 +52,9 @@ function feed(command, commandArgs, input) {
     });
     child.on("error", reject);
     child.on("close", (code) =>
-      code === 0 ? resolve() : reject(new Error(`${command} a échoué (${code}).`)),
+      code === 0
+        ? resolve()
+        : reject(new Error(`${command} a échoué (${code}).`)),
     );
     child.stdin.end(input);
   });

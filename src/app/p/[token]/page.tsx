@@ -57,13 +57,19 @@ export default async function PortalPage({
     },
   });
 
-  const dateFormat = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-  const dayFormat = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", {
-    dateStyle: "long",
-  });
+  const dateFormat = new Intl.DateTimeFormat(
+    locale === "fr" ? "fr-FR" : "en-GB",
+    {
+      dateStyle: "short",
+      timeStyle: "short",
+    },
+  );
+  const dayFormat = new Intl.DateTimeFormat(
+    locale === "fr" ? "fr-FR" : "en-GB",
+    {
+      dateStyle: "long",
+    },
+  );
 
   const progress = progressOf(steps);
   const pending = steps.filter((step) => step.status !== "VALIDATED");

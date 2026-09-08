@@ -46,8 +46,14 @@ export default async function MemberPage({
 
   return (
     <>
-      <nav aria-label="Fil d'Ariane" className="mb-2 text-xs text-[var(--color-muted)]">
-        <Link href="/app/settings" className="focusable rounded underline-offset-2 hover:underline">
+      <nav
+        aria-label="Fil d'Ariane"
+        className="mb-2 text-xs text-[var(--color-muted)]"
+      >
+        <Link
+          href="/app/settings"
+          className="focusable rounded underline-offset-2 hover:underline"
+        >
           Réglages
         </Link>
         <span aria-hidden> / </span>
@@ -75,8 +81,8 @@ export default async function MemberPage({
             </p>
           ) : user.projectMembers.length === 0 ? (
             <p className="text-sm text-[var(--color-muted)]">
-              Aucune affectation : cette personne ne voit aucun projet. Affectez-la
-              depuis la page d&apos;un projet.
+              Aucune affectation : cette personne ne voit aucun projet.
+              Affectez-la depuis la page d&apos;un projet.
             </p>
           ) : (
             <ul className="space-y-2">

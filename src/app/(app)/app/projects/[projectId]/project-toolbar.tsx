@@ -53,7 +53,10 @@ export function ProjectToolbar({
         <form
           action={(formData) =>
             startTransition(async () => {
-              await setDueDate(projectId, String(formData.get("dueDate") ?? ""));
+              await setDueDate(
+                projectId,
+                String(formData.get("dueDate") ?? ""),
+              );
               toast({ message: "Échéance mise à jour." });
               setEditingDue(false);
             })

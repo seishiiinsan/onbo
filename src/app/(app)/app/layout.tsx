@@ -14,14 +14,14 @@ export default async function AppLayout({
 
   const [agency, user, agencies, awaitingCount, notifications, unread] =
     await Promise.all([
-    prisma.agency.findUniqueOrThrow({ where: { id: ctx.agencyId } }),
-    prisma.user.findUniqueOrThrow({ where: { id: ctx.userId } }),
-    listUserAgencies(ctx.userId),
-    prisma.onboardingStep.count({
-      where: { status: "SUBMITTED", project: projectScope(ctx) },
-    }),
-    listNotifications(ctx.userId, ctx.agencyId),
-    unreadCount(ctx.userId, ctx.agencyId),
+      prisma.agency.findUniqueOrThrow({ where: { id: ctx.agencyId } }),
+      prisma.user.findUniqueOrThrow({ where: { id: ctx.userId } }),
+      listUserAgencies(ctx.userId),
+      prisma.onboardingStep.count({
+        where: { status: "SUBMITTED", project: projectScope(ctx) },
+      }),
+      listNotifications(ctx.userId, ctx.agencyId),
+      unreadCount(ctx.userId, ctx.agencyId),
     ]);
 
   const dateTime = new Intl.DateTimeFormat("fr-FR", {

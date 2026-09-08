@@ -72,7 +72,10 @@ function sign(config, method, url, query, payloadHash, extraHeaders = {}) {
   ].join("\n");
 
   const key = hmac(
-    hmac(hmac(hmac(`AWS4${config.secretAccessKey}`, dateStamp), config.region), "s3"),
+    hmac(
+      hmac(hmac(`AWS4${config.secretAccessKey}`, dateStamp), config.region),
+      "s3",
+    ),
     "aws4_request",
   );
   const signature = createHmac("sha256", key).update(toSign).digest("hex");
@@ -83,7 +86,12 @@ function sign(config, method, url, query, payloadHash, extraHeaders = {}) {
   };
 }
 
-export async function putObject(config, key, body, contentType = "application/octet-stream") {
+export async function putObject(
+  config,
+  key,
+  body,
+  contentType = "application/octet-stream",
+) {
   const url = urlFor(config, key);
   const headers = sign(config, "PUT", url, "", sha256(body), {
     "content-type": contentType,
@@ -132,10 +140,12 @@ export async function listObjects(config, prefix) {
     }
 
     const xml = await response.text();
-    for (const match of xml.matchAll(/<Key>([^<]+)<\/Key>/g)) keys.push(match[1]);
+    for (const match of xml.matchAll(/<Key>([^<]+)<\/Key>/g))
+      keys.push(match[1]);
 
     const next = xml.match(/<NextContinuationToken>([^<]+)</);
-    token = xml.includes("<IsTruncated>true</IsTruncated>") && next ? next[1] : null;
+    token =
+      xml.includes("<IsTruncated>true</IsTruncated>") && next ? next[1] : null;
   } while (token);
 
   return keys;

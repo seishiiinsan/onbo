@@ -16,7 +16,10 @@ function appUrl(path: string) {
   return `${base}${path}`;
 }
 
-export async function projectRecipients(projectId: string, exclude?: string | null) {
+export async function projectRecipients(
+  projectId: string,
+  exclude?: string | null,
+) {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     select: {
@@ -163,7 +166,11 @@ export async function runDailyDigest(now = new Date()) {
           blockedNote: { not: null },
           project: { ...scope, status: { in: ["DRAFT", "ACTIVE"] } },
         },
-        select: { title: true, blockedNote: true, project: { select: { name: true } } },
+        select: {
+          title: true,
+          blockedNote: true,
+          project: { select: { name: true } },
+        },
         take: 20,
       }),
     ]);

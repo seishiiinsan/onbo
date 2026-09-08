@@ -55,7 +55,9 @@ export function planOf(tier: PlanTier) {
 
 /** Abonnement de l'agence, cree en essai s'il n'existe pas encore. */
 export async function subscriptionOf(agencyId: string) {
-  const existing = await prisma.subscription.findUnique({ where: { agencyId } });
+  const existing = await prisma.subscription.findUnique({
+    where: { agencyId },
+  });
   if (existing) return existing;
 
   return prisma.subscription.create({

@@ -62,7 +62,9 @@ export function captureError(
           {
             type: error instanceof Error ? error.name : "Error",
             value: message,
-            stacktrace: stack ? { frames: [{ filename: stack.split("\n")[1] ?? "" }] } : undefined,
+            stacktrace: stack
+              ? { frames: [{ filename: stack.split("\n")[1] ?? "" }] }
+              : undefined,
           },
         ],
       },

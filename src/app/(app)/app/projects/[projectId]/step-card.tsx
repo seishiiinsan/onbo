@@ -1,8 +1,21 @@
 "use client";
 
 import { useActionState, useOptimistic, useState, useTransition } from "react";
-import type { CommentAuthor, CredentialKind, StepKind, StepStatus } from "@prisma/client";
-import { Copy, Download, Eye, EyeOff, Pencil, Trash2, TriangleAlert } from "lucide-react";
+import type {
+  CommentAuthor,
+  CredentialKind,
+  StepKind,
+  StepStatus,
+} from "@prisma/client";
+import {
+  Copy,
+  Download,
+  Eye,
+  EyeOff,
+  Pencil,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import {
   addAgencyComment,
   addCredential,
@@ -98,8 +111,7 @@ export function StepCard({
       setStatus(next);
       await setStepStatus(step.id, next);
       toast({
-        message:
-          next === "VALIDATED" ? "Étape validée." : "Statut mis à jour.",
+        message: next === "VALIDATED" ? "Étape validée." : "Statut mis à jour.",
       });
     });
 
@@ -497,7 +509,9 @@ function Credentials({ step }: { step: StepCardData }) {
               required
             />
             {state.error && (
-              <p className="text-sm text-[var(--color-danger)]">{state.error}</p>
+              <p className="text-sm text-[var(--color-danger)]">
+                {state.error}
+              </p>
             )}
             <div className="flex gap-2">
               <Button type="submit" size="sm" disabled={pending}>

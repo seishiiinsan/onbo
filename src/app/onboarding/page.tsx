@@ -9,7 +9,9 @@ export const metadata = { title: "Créer votre espace · Onbo" };
 export default async function OnboardingPage() {
   const user = await requireUser();
 
-  const existing = await prisma.membership.count({ where: { userId: user.id } });
+  const existing = await prisma.membership.count({
+    where: { userId: user.id },
+  });
   if (existing > 0) redirect("/app");
 
   return (
