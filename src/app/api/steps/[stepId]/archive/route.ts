@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resolvePortalToken } from "@/lib/portal";
 import { prisma } from "@/lib/prisma";
-import { readFileStream } from "@/lib/storage";
+import { openFileStream } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -31,7 +31,7 @@ export async function GET(
   const archive = new ZipArchive({ zlib: { level: 6 } });
 
   for (const asset of step.assets) {
-    archive.append(readFileStream(asset.storageKey), { name: asset.filename });
+    archive.append(await openFileStream(asset.storageKey), { name: asset.filename });
   }
   void archive.finalize();
 

@@ -10,8 +10,12 @@ import { cn } from "@/lib/utils";
  * Depot de fichiers : glisser-deposer (item 29), envoi multiple avec
  * progression par fichier (item 30).
  *
- * Passe par /api/upload et XMLHttpRequest plutot que fetch : c'est le seul
- * moyen d'obtenir la progression d'envoi.
+ * XMLHttpRequest plutot que fetch : c'est le seul moyen d'obtenir la
+ * progression d'envoi.
+ *
+ * Deux chemins (issue #32) : avec un stockage objet configure, le navigateur
+ * televerse directement vers l'URL presignee et l'application ne fait que
+ * confirmer ; sinon, envoi classique vers /api/upload.
  */
 type Upload = { name: string; percent: number; error?: string };
 
@@ -30,7 +34,103 @@ export function Uploader({
   const [dragging, setDragging] = useState(false);
   const [uploads, setUploads] = useState<Upload[]>([]);
 
-  const sendOne = (file: File) =>
+  const progress = (file: File, percent: number) =>
+    setUploads((current) =>
+      current.map((upload) =>
+        upload.name === file.name ? { ...upload, percent } : upload,
+      ),
+    );
+
+  const fail = (file: File, message: string) => {
+    setUploads((current) =>
+      current.map((upload) =>
+        upload.name === file.name ? { ...upload, error: message } : upload,
+      ),
+    );
+    toast({ message: `${file.name} : ${message}`, tone: "error" });
+  };
+
+  const done = (file: File) =>
+    setUploads((current) =>
+      current.filter((upload) => upload.name !== file.name),
+    );
+
+  /** Envoi vers une URL quelconque, avec progression. */
+  const put = (file: File, url: string, headers: Record<string, string>) =>
+    new Promise<number>((resolve) => {
+      const request = new XMLHttpRequest();
+      request.open("PUT", url);
+      for (const [name, value] of Object.entries(headers)) {
+        request.setRequestHeader(name, value);
+      }
+      request.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          progress(file, Math.round((event.loaded / event.total) * 100));
+        }
+      };
+      request.onload = () => resolve(request.status);
+      request.onerror = () => resolve(0);
+      request.send(file);
+    });
+
+  /**
+   * Depot direct : URL presignee, envoi vers le stockage, confirmation.
+   * Retourne false quand le stockage objet n'est pas configure (501).
+   */
+  const sendDirect = async (file: File) => {
+    const ask = await fetch("/api/upload/presign", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        stepId,
+        token,
+        mimeType: file.type,
+        size: file.size,
+      }),
+    });
+
+    if (ask.status === 501) return false;
+    if (!ask.ok) {
+      const payload = await ask.json().catch(() => ({}));
+      fail(file, payload.error ?? "Envoi refusé.");
+      return true;
+    }
+
+    const presigned = (await ask.json()) as {
+      storageKey: string;
+      url: string;
+      headers: Record<string, string>;
+    };
+
+    const status = await put(file, presigned.url, presigned.headers);
+    if (status < 200 || status >= 300) {
+      fail(file, "Envoi interrompu.");
+      return true;
+    }
+
+    const confirm = await fetch("/api/upload/complete", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        stepId,
+        token,
+        storageKey: presigned.storageKey,
+        filename: file.name,
+        mimeType: file.type,
+      }),
+    });
+
+    if (!confirm.ok) {
+      const payload = await confirm.json().catch(() => ({}));
+      fail(file, payload.error ?? "Envoi refusé.");
+      return true;
+    }
+
+    done(file);
+    return true;
+  };
+
+  const sendThroughApp = (file: File) =>
     new Promise<void>((resolve) => {
       const body = new FormData();
       body.set("file", file);
@@ -41,37 +141,26 @@ export function Uploader({
       request.open("POST", "/api/upload");
 
       request.upload.onprogress = (event) => {
-        if (!event.lengthComputable) return;
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploads((current) =>
-          current.map((upload) =>
-            upload.name === file.name ? { ...upload, percent } : upload,
-          ),
-        );
+        if (event.lengthComputable) {
+          progress(file, Math.round((event.loaded / event.total) * 100));
+        }
       };
 
       request.onload = () => {
         if (request.status >= 200 && request.status < 300) {
-          setUploads((current) =>
-            current.filter((upload) => upload.name !== file.name),
-          );
+          done(file);
         } else {
           let message = "Envoi refusé.";
           try {
             message = JSON.parse(request.responseText).error ?? message;
           } catch {}
-          setUploads((current) =>
-            current.map((upload) =>
-              upload.name === file.name ? { ...upload, error: message } : upload,
-            ),
-          );
-          toast({ message: `${file.name} : ${message}`, tone: "error" });
+          fail(file, message);
         }
         resolve();
       };
 
       request.onerror = () => {
-        toast({ message: `${file.name} : envoi interrompu.`, tone: "error" });
+        fail(file, "Envoi interrompu.");
         resolve();
       };
 
@@ -86,7 +175,11 @@ export function Uploader({
       ...files.map((file) => ({ name: file.name, percent: 0 })),
     ]);
 
-    for (const file of files) await sendOne(file);
+    for (const file of files) {
+      // Le depot direct n'est tente qu'une fois : si le stockage objet n'est
+      // pas configure, on bascule sur l'envoi classique.
+      if (!(await sendDirect(file))) await sendThroughApp(file);
+    }
 
     if (inputRef.current) inputRef.current.value = "";
     toast({

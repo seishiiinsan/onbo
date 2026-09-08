@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "rekey": "node scripts/rekey.mjs"
+    "rekey": "node scripts/rekey.mjs",
+    "migrate-storage": "node scripts/migrate-storage.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
