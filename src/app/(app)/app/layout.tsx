@@ -1,6 +1,7 @@
 import { AGENCY_ROLE_LABEL, projectScope } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { listUserAgencies, requireTenant } from "@/lib/tenant";
+import { listNotifications, unreadCount } from "@/lib/notifications";
 import { CommandPalette } from "./command-palette";
 import { Sidebar } from "./sidebar";
 
@@ -11,14 +12,22 @@ export default async function AppLayout({
 }) {
   const ctx = await requireTenant();
 
-  const [agency, user, agencies, awaitingCount] = await Promise.all([
+  const [agency, user, agencies, awaitingCount, notifications, unread] =
+    await Promise.all([
     prisma.agency.findUniqueOrThrow({ where: { id: ctx.agencyId } }),
     prisma.user.findUniqueOrThrow({ where: { id: ctx.userId } }),
     listUserAgencies(ctx.userId),
     prisma.onboardingStep.count({
       where: { status: "SUBMITTED", project: projectScope(ctx) },
     }),
-  ]);
+    listNotifications(ctx.userId, ctx.agencyId),
+    unreadCount(ctx.userId, ctx.agencyId),
+    ]);
+
+  const dateTime = new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
 
   return (
     // La couleur de l'agence devient la couleur d'accent de toute
@@ -36,6 +45,15 @@ export default async function AppLayout({
         userName={user.name ?? ctx.email.split("@")[0]}
         roleLabel={AGENCY_ROLE_LABEL[ctx.role]}
         awaitingCount={awaitingCount}
+        notifications={notifications.map((item) => ({
+          id: item.id,
+          title: item.title,
+          body: item.body,
+          url: item.url,
+          at: dateTime.format(item.createdAt),
+          read: item.readAt !== null,
+        }))}
+        unreadNotifications={unread}
         agencies={agencies.map((agency) => ({
           id: agency.id,
           name: agency.name,

@@ -63,6 +63,9 @@ services:
         if [ $$((tick % 60)) -eq 0 ]; then
           curl -s -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/cron/reminders >/dev/null || true;
         fi;
+        if [ $$((tick % 1440)) -eq 0 ]; then
+          curl -s -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/cron/digest >/dev/null || true;
+        fi;
       done"
 
 volumes:

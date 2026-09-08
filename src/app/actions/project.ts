@@ -8,6 +8,7 @@ import { projectScope, requireProjectEdit } from "@/lib/access";
 import { logActivity } from "@/lib/activity";
 import { issuePortalLink, revokePortalLinks } from "@/lib/portal";
 import { sendPortalInvites } from "@/lib/portal-invite";
+import { notifyProject } from "@/lib/notifications";
 import { requireTenant, type TenantContext } from "@/lib/tenant";
 
 export type FormState = { error?: string };
@@ -373,11 +374,25 @@ export async function setStepBlocked(stepId: string, note: string) {
   const ctx = await requireTenant();
   const { step } = await requireStepEdit(ctx, stepId);
   const trimmed = note.trim();
+  const project = await prisma.project.findUniqueOrThrow({
+    where: { id: step.projectId },
+    select: { name: true },
+  });
 
   const updated = await prisma.onboardingStep.update({
     where: { id: step.id },
     data: { blockedNote: trimmed || null },
   });
+
+  if (trimmed) {
+    await notifyProject({
+      projectId: step.projectId,
+      kind: "STEP_BLOCKED",
+      title: `${project.name} — blocage signalé`,
+      body: `${updated.title} : ${trimmed}`,
+      excludeUserId: ctx.userId,
+    });
+  }
 
   await logActivity({
     projectId: step.projectId,

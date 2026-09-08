@@ -70,6 +70,7 @@ model User {
   memberships    Membership[]
   sessions       Session[]
   projectMembers ProjectMember[]
+  notifications  Notification[]
 }
 
 /// Lien magique a usage unique (connexion staff).
@@ -395,4 +396,36 @@ model PortalInvite {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([projectId, sentAt])
+}
+
+enum NotificationKind {
+  STEP_SUBMITTED
+  CLIENT_MESSAGE
+  CLIENT_CREDENTIAL
+  STEP_BLOCKED
+  DAILY_DIGEST
+}
+
+/// Notification interne au staff (issue #39).
+///
+/// Une ligne par destinataire : l'etat lu / non lu est individuel. Le mail
+/// correspondant part par la file EmailMessage, sans etre rejoue ici.
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  agencyId  String
+  projectId String?
+  kind      NotificationKind
+  title     String
+  body      String?
+  /// Lien interne a ouvrir au clic.
+  url       String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([projectId])
 }
