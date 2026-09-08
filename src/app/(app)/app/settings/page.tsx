@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { PageHeader } from "@/components/page-header";
 import { BrandingForm } from "./branding-form";
+import { PrivacyPanel } from "./privacy-panel";
 import { ProfileForm } from "./profile-form";
 import { TeamPanel } from "./team-panel";
 
@@ -47,6 +48,12 @@ export default async function SettingsPage() {
           logoUrl: agency.logoUrl ?? "",
           accentColor: agency.accentColor,
           }}
+        />
+
+        <PrivacyPanel
+          canManage={ctx.role !== "MEMBER"}
+          isOwner={ctx.role === "OWNER"}
+          agencyName={agency.name}
         />
 
         <TeamPanel

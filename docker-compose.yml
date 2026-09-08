@@ -49,6 +49,11 @@ services:
       METRICS_TOKEN: ${METRICS_TOKEN:-}
       APP_RELEASE: ${APP_RELEASE:-}
       ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
+      # Durees de conservation (issue #45)
+      RETENTION_PROJECT_MONTHS: ${RETENTION_PROJECT_MONTHS:-12}
+      RETENTION_LOG_DAYS: ${RETENTION_LOG_DAYS:-365}
+      RETENTION_EMAIL_DAYS: ${RETENTION_EMAIL_DAYS:-180}
+      RETENTION_ABUSE_DAYS: ${RETENTION_ABUSE_DAYS:-90}
       QUOTA_PROJECT_BYTES: ${QUOTA_PROJECT_BYTES:-}
       QUOTA_AGENCY_BYTES: ${QUOTA_AGENCY_BYTES:-}
       ONBO_ENCRYPTION_KEY: ${ONBO_ENCRYPTION_KEY:?cle de chiffrement manquante}
@@ -112,6 +117,7 @@ services:
         fi;
         if [ $$((tick % 1440)) -eq 0 ]; then
           curl -s -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/cron/digest >/dev/null || true;
+          curl -s -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/cron/retention >/dev/null || true;
         fi;
       done"
 
