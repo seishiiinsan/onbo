@@ -7,6 +7,7 @@ import { logActivity } from "@/lib/activity";
 import { MissingEncryptionKey, seal } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
 import { resolvePortalToken } from "@/lib/portal";
+import { notifyProject } from "@/lib/notifications";
 
 /**
  * Mise a jour d'une etape depuis le portail client.
@@ -49,6 +50,15 @@ export async function clientSetStepStatus(
     detail: updated.title,
   });
 
+  if (status === "SUBMITTED") {
+    await notifyProject({
+      projectId: link.projectId,
+      kind: "STEP_SUBMITTED",
+      title: `${link.project.name} — une étape attend votre validation`,
+      body: `Le client a déclaré « ${updated.title} » complète.`,
+    });
+  }
+
   revalidatePath(`/p/${token}`);
   revalidatePath(`/app/projects/${link.projectId}`);
 }
@@ -85,6 +95,13 @@ export async function clientAddComment(
     projectId: link.projectId,
     actor: "CLIENT",
     action: "a écrit un message",
+  });
+
+  await notifyProject({
+    projectId: link.projectId,
+    kind: "CLIENT_MESSAGE",
+    title: `${link.project.name} — nouveau message du client`,
+    body: body.slice(0, 200),
   });
 
   revalidatePath(`/p/${token}`);
@@ -140,6 +157,14 @@ export async function clientAddCredential(
     actor: "CLIENT",
     action: "a transmis un accès",
     detail: label,
+  });
+
+  await notifyProject({
+    projectId: link.projectId,
+    kind: "CLIENT_CREDENTIAL",
+    title: `${link.project.name} — un accès a été déposé`,
+    body: `Nouvel accès : ${label}.`,
+    // Le contenu du coffre ne sort jamais par email : seul le libelle.
   });
 
   revalidatePath(`/p/${token}`);

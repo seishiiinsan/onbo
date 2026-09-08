@@ -15,6 +15,7 @@ import { switchAgency } from "@/app/actions/agency";
 import { LogoMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { NotificationsBell, type NotificationItem } from "./notifications-bell";
 import { UserMenu } from "./user-menu";
 
 /**
@@ -37,6 +38,8 @@ type Props = {
   roleLabel: string;
   /** Etapes en attente de validation, tous projets visibles confondus. */
   awaitingCount: number;
+  notifications: NotificationItem[];
+  unreadNotifications: number;
   agencies: { id: string; name: string; active: boolean }[];
 };
 
@@ -48,6 +51,8 @@ export function Sidebar({
   userName,
   roleLabel,
   awaitingCount,
+  notifications,
+  unreadNotifications,
   agencies,
 }: Props) {
   const pathname = usePathname();
@@ -155,6 +160,12 @@ export function Sidebar({
           {!compact && "Nouveau projet"}
         </Button>
       </Link>
+
+      <NotificationsBell
+        items={notifications}
+        unread={unreadNotifications}
+        compact={compact}
+      />
 
       <nav className="flex-1">
         {!compact && <p className="section-label mb-2 px-3">Pilotage</p>}
