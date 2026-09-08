@@ -1,7 +1,15 @@
 import { prisma } from "@/lib/prisma";
+import {
+  daysLeftOfTrial,
+  planOf,
+  PLANS,
+  subscriptionOf,
+} from "@/lib/billing";
+import { stripeConfigured } from "@/lib/stripe";
 import { requireTenant } from "@/lib/tenant";
 import { PageHeader } from "@/components/page-header";
 import { BrandingForm } from "./branding-form";
+import { BillingPanel } from "./billing-panel";
 import { PrivacyPanel } from "./privacy-panel";
 import { ProfileForm } from "./profile-form";
 import { TeamPanel } from "./team-panel";
@@ -11,7 +19,7 @@ export const metadata = { title: "Réglages · Onbo" };
 export default async function SettingsPage() {
   const ctx = await requireTenant();
 
-  const [agency, user, memberships] = await Promise.all([
+  const [agency, user, memberships, subscription] = await Promise.all([
     prisma.agency.findUniqueOrThrow({ where: { id: ctx.agencyId } }),
     prisma.user.findUniqueOrThrow({ where: { id: ctx.userId } }),
     prisma.membership.findMany({
@@ -29,7 +37,17 @@ export default async function SettingsPage() {
         },
       },
     }),
+    subscriptionOf(ctx.agencyId),
   ]);
+
+  const dayFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
+  const STATUT: Record<string, string> = {
+    TRIALING: "essai en cours",
+    ACTIVE: "abonnement actif",
+    PAST_DUE: "paiement en attente",
+    CANCELED: "abonnement résilié",
+    INCOMPLETE: "abonnement incomplet",
+  };
 
   return (
     <>
@@ -47,6 +65,29 @@ export default async function SettingsPage() {
           slug: agency.slug,
           logoUrl: agency.logoUrl ?? "",
           accentColor: agency.accentColor,
+          }}
+        />
+
+        <BillingPanel
+          isOwner={ctx.role === "OWNER"}
+          view={{
+            plan: subscription.plan,
+            planLabel: `Formule ${planOf(subscription.plan).nom}`,
+            status: subscription.status,
+            statusLabel: STATUT[subscription.status] ?? subscription.status,
+            trialDaysLeft: daysLeftOfTrial(subscription.trialEndsAt),
+            renewsOn: subscription.currentPeriodEnd
+              ? dayFormat.format(subscription.currentPeriodEnd)
+              : null,
+            seats: memberships.length,
+            hasCustomer: Boolean(subscription.stripeCustomerId),
+            configured: stripeConfigured(),
+            plans: PLANS.map((plan) => ({
+              tier: plan.tier,
+              nom: plan.nom,
+              prix: plan.prixMensuelEuros,
+              sieges: plan.siegesInclus,
+            })),
           }}
         />
 

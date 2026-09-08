@@ -55,8 +55,9 @@ model Agency {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  memberships Membership[]
-  projects    Project[]
+  memberships  Membership[]
+  projects     Project[]
+  subscription Subscription?
 }
 
 /// Staff agence.
@@ -474,4 +475,48 @@ model AbuseEvent {
 
   @@index([kind, createdAt])
   @@index([createdAt])
+}
+
+/// Formules affichees sur la landing : 29 / 99 / 149 EUR par mois.
+enum PlanTier {
+  SOLO
+  STUDIO
+  AGENCE
+}
+
+/// Etat de l'abonnement, aligne sur les statuts Stripe utiles.
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+/// Abonnement d'une agence (issue #41).
+///
+/// Une ligne par agence, creee des l'ouverture de l'espace avec l'essai de
+/// 14 jours : l'agence est donc toujours dans un etat connu, meme sans carte.
+/// Stripe reste la source de verite des montants ; on ne recopie ici que ce
+/// dont l'application a besoin pour decider ce qui est ouvert.
+model Subscription {
+  id                   String             @id @default(cuid())
+  agencyId             String             @unique
+  plan                 PlanTier           @default(SOLO)
+  status               SubscriptionStatus @default(TRIALING)
+  /// Unite de facturation : nombre de sieges factures (issue #41).
+  seats                Int                @default(1)
+  trialEndsAt          DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  /// Derniere relance d'essai envoyee, pour ne pas la repeter.
+  trialReminderAt      DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  agency Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([status])
 }

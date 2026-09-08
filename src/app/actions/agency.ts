@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { TRIAL_DAYS } from "@/lib/billing";
 import {
   AGENCY_COOKIE,
   requireRole,
@@ -35,6 +36,12 @@ export async function createAgency(
       name,
       slug,
       memberships: { create: { userId: user.id, role: "OWNER" } },
+      // Essai de 14 jours ouvert des la creation, sans carte (issue #41).
+      subscription: {
+        create: {
+          trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 86_400_000),
+        },
+      },
     },
   });
 
