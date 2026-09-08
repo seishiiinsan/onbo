@@ -54,6 +54,30 @@ export function NewProjectForm() {
             </p>
           </div>
 
+          <div className="mt-5">
+            <Label htmlFor="clientEmail">
+              Email du client{" "}
+              <span className="font-normal text-[var(--color-muted)]">
+                (optionnel)
+              </span>
+            </Label>
+            <Input
+              id="clientEmail"
+              name="clientEmail"
+              type="email"
+              placeholder="contact@client.fr"
+            />
+            <label className="mt-2.5 flex items-start gap-2.5 text-sm">
+              <input
+                type="checkbox"
+                name="sendLink"
+                defaultChecked
+                className="mt-1"
+              />
+              Lui envoyer le lien du portail tout de suite
+            </label>
+          </div>
+
           {state.error && (
             <p className="mt-3 text-sm text-[var(--color-danger)]">
               {state.error}

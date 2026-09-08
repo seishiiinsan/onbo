@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { projectScope, requireProjectEdit } from "@/lib/access";
 import { logActivity } from "@/lib/activity";
 import { issuePortalLink, revokePortalLinks } from "@/lib/portal";
+import { sendPortalInvites } from "@/lib/portal-invite";
 import { requireTenant, type TenantContext } from "@/lib/tenant";
 
 export type FormState = { error?: string };
@@ -69,8 +70,15 @@ export async function createProject(
   const ctx = await requireTenant();
   const name = String(formData.get("name") ?? "").trim();
   const withDefaults = formData.get("withDefaults") === "on";
+  const clientEmail = String(formData.get("clientEmail") ?? "")
+    .toLowerCase()
+    .trim();
+  const sendLink = formData.get("sendLink") === "on";
 
   if (name.length < 2) return { error: "Nom de projet trop court." };
+  if (clientEmail && !EMAIL_RE.test(clientEmail)) {
+    return { error: "Adresse email du contact invalide." };
+  }
 
   const project = await prisma.project.create({
     data: {
@@ -96,6 +104,29 @@ export async function createProject(
         : undefined,
     },
   });
+
+  // Contact renseigne des la creation : on le rattache, et on propose
+  // d'envoyer le lien tout de suite plutot qu'en trois ecrans (issue #38).
+  if (clientEmail) {
+    const client = await prisma.client.upsert({
+      where: { email: clientEmail },
+      update: {},
+      create: { email: clientEmail },
+    });
+
+    await prisma.clientProject.create({
+      data: { clientId: client.id, projectId: project.id },
+    });
+
+    if (sendLink) {
+      await sendPortalInvites({
+        projectId: project.id,
+        recipients: [{ clientId: client.id, email: clientEmail }],
+        sentByUserId: ctx.userId,
+        actorName: ctx.email,
+      });
+    }
+  }
 
   redirect(`/app/projects/${project.id}`);
 }
@@ -243,6 +274,46 @@ export async function revokePortalLink(projectId: string) {
   const { project } = await scopedProject(projectId);
   await revokePortalLinks(project.id);
   revalidatePath(`/app/projects/${project.id}`);
+}
+
+export type SendLinkState = { error?: string; sent?: number };
+
+/**
+ * Envoie le lien du portail a des contacts du projet (issue #38).
+ *
+ * Les destinataires sont designes par leur ClientProject : impossible de
+ * viser une adresse qui n'est pas rattachee au projet.
+ */
+export async function sendPortalLink(
+  _prev: SendLinkState,
+  formData: FormData,
+): Promise<SendLinkState> {
+  const { ctx, project } = await scopedProject(String(formData.get("projectId")));
+  const ids = formData.getAll("clientProjectId").map(String).filter(Boolean);
+  const message = String(formData.get("message") ?? "").trim();
+
+  if (ids.length === 0) return { error: "Choisissez au moins un contact." };
+
+  const links = await prisma.clientProject.findMany({
+    where: { id: { in: ids }, projectId: project.id },
+    include: { client: true },
+  });
+  if (links.length === 0) return { error: "Contact introuvable sur ce projet." };
+
+  const { sent } = await sendPortalInvites({
+    projectId: project.id,
+    recipients: links.map((link) => ({
+      clientId: link.clientId,
+      email: link.client.email,
+      name: link.client.name,
+    })),
+    message: message || null,
+    sentByUserId: ctx.userId,
+    actorName: ctx.email,
+  });
+
+  revalidatePath(`/app/projects/${project.id}`);
+  return { sent: sent.length };
 }
 
 /** Reglage des relances automatiques du projet (issue #16). */
