@@ -49,7 +49,11 @@ Le conteneur `app` lance `prisma migrate deploy` au boot, puis demarre Next.
 
 ## Deploiement automatique
 
-Merge sur `main` → GitHub Actions se connecte en SSH au VPS →
+**Actuellement desactive** : il n'y a pas de serveur cible. Le workflow ne
+part plus qu'a la main, et seulement si la variable de depot `VPS_ENABLED`
+vaut `true`. Le developpement se fait sur `develop`.
+
+Une fois reactive : merge sur `main` → GitHub Actions se connecte en SSH au VPS →
 `git reset --hard origin/main` → `docker compose up -d --build` → migrations → Next.
 
 Secrets GitHub requis : `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_APP_PATH`,

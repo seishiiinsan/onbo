@@ -1,13 +1,15 @@
 name: Deploy
 
+# Declenchement manuel uniquement : il n'y a pas de VPS cible pour l'instant.
+# Reactiver le declencheur sur push le jour ou un serveur existe a nouveau.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Sans hote configure, le job s'arrete avant de tenter une connexion.
+    if: vars.VPS_ENABLED == 'true'
     steps:
       - name: SSH deploy sur le VPS
         uses: appleboy/ssh-action@v1.2.0
