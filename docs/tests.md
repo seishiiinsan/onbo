@@ -6,13 +6,13 @@ couverts.
 
 ## Ce qui tourne
 
-| Commande | Ce qu'elle couvre |
-|----------|-------------------|
-| `npm run format:check` | Prettier, bloquant |
-| `npm run lint:check` | ESLint (base Next + TypeScript), bloquant |
-| `npm test` | Vitest : unitaires, et intégration si `TEST_DATABASE_URL` |
-| `npm run test:e2e` | Playwright : parcours complet |
-| `npm run build` | Compilation et vérification des types |
+| Commande               | Ce qu'elle couvre                                         |
+| ---------------------- | --------------------------------------------------------- |
+| `npm run format:check` | Prettier, bloquant                                        |
+| `npm run lint:check`   | ESLint (base Next + TypeScript), bloquant                 |
+| `npm test`             | Vitest : unitaires, et intégration si `TEST_DATABASE_URL` |
+| `npm run test:e2e`     | Playwright : parcours complet                             |
+| `npm run build`        | Compilation et vérification des types                     |
 
 ## Unitaires
 
