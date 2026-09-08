@@ -25,7 +25,11 @@ export async function GET(request: NextRequest) {
         project: scope,
         title: { contains: query, mode: "insensitive" },
       },
-      select: { id: true, title: true, project: { select: { id: true, name: true } } },
+      select: {
+        id: true,
+        title: true,
+        project: { select: { id: true, name: true } },
+      },
       take: 5,
     }),
     prisma.clientProject.findMany({

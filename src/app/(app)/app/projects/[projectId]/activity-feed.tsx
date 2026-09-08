@@ -33,7 +33,10 @@ export function ActivityFeed({
         ) : (
           <ol className="space-y-3">
             {entries.map((entry) => (
-              <li key={entry.id} className="border-l-2 border-[var(--color-line)] pl-3">
+              <li
+                key={entry.id}
+                className="border-l-2 border-[var(--color-line)] pl-3"
+              >
                 <p className="text-sm">
                   <span className="font-medium">
                     {entry.actorName ?? ACTOR_LABEL[entry.actor]}

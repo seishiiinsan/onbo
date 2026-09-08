@@ -44,8 +44,7 @@ export async function requestLoginLink(
 
   if (tooMany) {
     return {
-      error:
-        "Trop de demandes de connexion. Réessayez dans quelques minutes.",
+      error: "Trop de demandes de connexion. Réessayez dans quelques minutes.",
     };
   }
 

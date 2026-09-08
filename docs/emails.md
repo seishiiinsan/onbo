@@ -13,12 +13,12 @@ sendMail()  ->  file EmailMessage  ->  fournisseur HTTP  ->  rebonds (webhook)
 
 `EMAIL_PROVIDER` accepte quatre valeurs :
 
-| Valeur     | Hébergement | Variables requises |
-|------------|-------------|--------------------|
-| `console`  | —           | aucune (défaut, écrit dans les logs) |
-| `brevo`    | France      | `BREVO_API_KEY` |
-| `postmark` | UE (compte EU) | `POSTMARK_TOKEN`, éventuellement `POSTMARK_STREAM` |
-| `scaleway` | France (fr-par) | `SCALEWAY_SECRET_KEY`, `SCALEWAY_PROJECT_ID` |
+| Valeur     | Hébergement     | Variables requises                                 |
+| ---------- | --------------- | -------------------------------------------------- |
+| `console`  | —               | aucune (défaut, écrit dans les logs)               |
+| `brevo`    | France          | `BREVO_API_KEY`                                    |
+| `postmark` | UE (compte EU)  | `POSTMARK_TOKEN`, éventuellement `POSTMARK_STREAM` |
+| `scaleway` | France (fr-par) | `SCALEWAY_SECRET_KEY`, `SCALEWAY_PROJECT_ID`       |
 
 Commun à tous : `EMAIL_FROM` (`Onbo <bonjour@exemple.fr>`) et
 `EMAIL_WEBHOOK_SECRET` pour les rebonds.

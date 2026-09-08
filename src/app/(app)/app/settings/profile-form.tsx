@@ -11,13 +11,7 @@ import { useToast } from "@/components/ui/toast";
 const initial: AgencyState = {};
 
 /** Profil de la personne connectee : nom affiche dans le rail et les messages. */
-export function ProfileForm({
-  name,
-  email,
-}: {
-  name: string;
-  email: string;
-}) {
+export function ProfileForm({ name, email }: { name: string; email: string }) {
   const [state, action, pending] = useActionState(updateProfile, initial);
   const toast = useToast();
 

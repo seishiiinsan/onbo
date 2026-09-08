@@ -42,7 +42,9 @@ function objectUrl(key) {
   const base = new URL(config.endpoint);
   if (!config.forcePathStyle) base.host = `${config.bucket}.${base.host}`;
   const encoded = key.split("/").map(encodeURIComponent).join("/");
-  const p = config.forcePathStyle ? `/${config.bucket}/${encoded}` : `/${encoded}`;
+  const p = config.forcePathStyle
+    ? `/${config.bucket}/${encoded}`
+    : `/${encoded}`;
   return new URL(`${base.origin}${p}`);
 }
 
@@ -62,10 +64,28 @@ async function put(key, body, contentType) {
   const canonical = entries.map(([n, v]) => `${n}:${v}\n`).join("");
   const signed = entries.map(([n]) => n).join(";");
 
-  const canonicalRequest = ["PUT", url.pathname, "", canonical, signed, payloadHash].join("\n");
+  const canonicalRequest = [
+    "PUT",
+    url.pathname,
+    "",
+    canonical,
+    signed,
+    payloadHash,
+  ].join("\n");
   const scope = `${dateStamp}/${config.region}/s3/aws4_request`;
-  const toSign = ["AWS4-HMAC-SHA256", amzDate, scope, sha256(canonicalRequest)].join("\n");
-  const key4 = hmac(hmac(hmac(hmac(`AWS4${config.secretAccessKey}`, dateStamp), config.region), "s3"), "aws4_request");
+  const toSign = [
+    "AWS4-HMAC-SHA256",
+    amzDate,
+    scope,
+    sha256(canonicalRequest),
+  ].join("\n");
+  const key4 = hmac(
+    hmac(
+      hmac(hmac(`AWS4${config.secretAccessKey}`, dateStamp), config.region),
+      "s3",
+    ),
+    "aws4_request",
+  );
   const signature = createHmac("sha256", key4).update(toSign).digest("hex");
 
   return fetch(url, {

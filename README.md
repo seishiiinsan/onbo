@@ -7,13 +7,13 @@ L'agence suit l'avancement en temps reel.
 
 ## Stack
 
-| Couche     | Choix                                                |
-| ---------- | ---------------------------------------------------- |
-| Front/API  | Next.js 15 (App Router, TypeScript, standalone)      |
-| ORM        | Prisma                                               |
-| BDD        | PostgreSQL 16 — dans Docker, interne, non exposee    |
-| Conteneurs | Docker Compose (app + db + proxy + cron + sonde)      |
-| CI/CD      | GitHub Actions → SSH deploy sur push `main`          |
+| Couche     | Choix                                                  |
+| ---------- | ------------------------------------------------------ |
+| Front/API  | Next.js 15 (App Router, TypeScript, standalone)        |
+| ORM        | Prisma                                                 |
+| BDD        | PostgreSQL 16 — dans Docker, interne, non exposee      |
+| Conteneurs | Docker Compose (app + db + proxy + cron + sonde)       |
+| CI/CD      | GitHub Actions → SSH deploy sur push `main`            |
 | Prod       | `https://<domaine>` — Caddy, Let's Encrypt automatique |
 
 ## Dev local

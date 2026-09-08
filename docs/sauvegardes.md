@@ -6,9 +6,9 @@ travail de plusieurs agences.
 
 ## Ce qui est sauvegardé
 
-| Quoi | Comment | Où |
-|------|---------|-----|
-| Base | `pg_dump` → gzip → AES-256-GCM | `db/<horodatage>.sql.gz.enc` |
+| Quoi     | Comment                                        | Où                                |
+| -------- | ---------------------------------------------- | --------------------------------- |
+| Base     | `pg_dump` → gzip → AES-256-GCM                 | `db/<horodatage>.sql.gz.enc`      |
 | Fichiers | `tar` du volume `uploads` → gzip → AES-256-GCM | `uploads/<horodatage>.tar.gz.enc` |
 
 Le chiffrement se fait **avant** l'envoi : le stockage de destination ne voit
@@ -34,11 +34,11 @@ Le service `backup` du compose exécute `scripts/backup.mjs` une fois par jour.
 
 ## Les trois clés à ne pas confondre
 
-| Clé | Sans elle |
-|-----|-----------|
+| Clé                                            | Sans elle                                                            |
+| ---------------------------------------------- | -------------------------------------------------------------------- |
 | `ONBO_ENCRYPTION_KEY` / `ONBO_ENCRYPTION_KEYS` | la base restaurée est illisible : les accès clients restent chiffrés |
-| `BACKUP_KEY` | les sauvegardes sont illisibles |
-| `POSTGRES_PASSWORD` | rien de perdu, il se change |
+| `BACKUP_KEY`                                   | les sauvegardes sont illisibles                                      |
+| `POSTGRES_PASSWORD`                            | rien de perdu, il se change                                          |
 
 Les deux premières se sauvegardent **ailleurs que sur le serveur et ailleurs
 que dans le bucket de sauvegarde** — gestionnaire de secrets, coffre-fort de
@@ -67,8 +67,8 @@ Procédure complète, à rejouer sur un environnement **vierge** :
 **Chronométrer** l'exercice et noter le temps obtenu ici :
 
 | Date de l'exercice | Volume | Durée | Par |
-|--------------------|--------|-------|-----|
-| _à remplir_ | | | |
+| ------------------ | ------ | ----- | --- |
+| _à remplir_        |        |       |     |
 
 Un exercice non fait est une sauvegarde non testée.
 

@@ -43,7 +43,8 @@ export async function addTeamMember(
   const existing = await prisma.membership.findUnique({
     where: { userId_agencyId: { userId: user.id, agencyId: ctx.agencyId } },
   });
-  if (existing) return { error: "Cette personne fait déjà partie de l'équipe." };
+  if (existing)
+    return { error: "Cette personne fait déjà partie de l'équipe." };
 
   await prisma.membership.create({
     data: { userId: user.id, agencyId: ctx.agencyId, role },

@@ -154,7 +154,10 @@ export async function peek(bucket: string, rule: Rule, now = new Date()) {
  * requete en base, et chaque tentative est tracee.
  */
 export async function portalProbeBlocked(ip: string) {
-  return (await peek(`portal:probe:${ip}`, RULES.portalProbe)) >= RULES.portalProbe.limit;
+  return (
+    (await peek(`portal:probe:${ip}`, RULES.portalProbe)) >=
+    RULES.portalProbe.limit
+  );
 }
 
 export async function notePortalProbe(ip: string, token: string) {

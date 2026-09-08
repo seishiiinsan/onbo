@@ -21,12 +21,12 @@ nécessaires à leurs projets. Deux situations :
 
 ## Ce que nous collectons
 
-| Données | Pourquoi | Conservation |
-|---------|----------|--------------|
-| Adresse email, nom | Vous identifier, vous envoyer les liens | Durée du compte |
-| Contenus déposés (fichiers, messages) | La prestation elle-même | 12 mois après clôture du projet |
-| Accès techniques | Les transmettre à votre agence | Chiffrés ; supprimés à la purge ou sur demande |
-| Journaux de connexion et d'activité | Sécurité, preuve en cas de litige | 90 à 365 jours |
+| Données                               | Pourquoi                                | Conservation                                   |
+| ------------------------------------- | --------------------------------------- | ---------------------------------------------- |
+| Adresse email, nom                    | Vous identifier, vous envoyer les liens | Durée du compte                                |
+| Contenus déposés (fichiers, messages) | La prestation elle-même                 | 12 mois après clôture du projet                |
+| Accès techniques                      | Les transmettre à votre agence          | Chiffrés ; supprimés à la purge ou sur demande |
+| Journaux de connexion et d'activité   | Sécurité, preuve en cas de litige       | 90 à 365 jours                                 |
 
 Nous ne pratiquons **aucun pistage publicitaire**, ne déposons aucun cookie de
 mesure d'audience tierce, et ne revendons aucune donnée.

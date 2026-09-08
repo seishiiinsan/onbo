@@ -52,8 +52,8 @@ export function LoginForm() {
       </Button>
 
       <p className="mt-4 text-xs leading-relaxed text-[var(--color-muted)]">
-        Pas de mot de passe à retenir : nous envoyons un lien à usage unique.
-        En continuant, vous acceptez que vos données soient traitées pour la
+        Pas de mot de passe à retenir : nous envoyons un lien à usage unique. En
+        continuant, vous acceptez que vos données soient traitées pour la
         fourniture du service.
       </p>
     </form>

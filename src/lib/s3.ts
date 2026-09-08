@@ -53,7 +53,10 @@ function stamps(now: Date) {
 
 function signingKey(config: S3Config, dateStamp: string) {
   return hmac(
-    hmac(hmac(hmac(`AWS4${config.secretAccessKey}`, dateStamp), config.region), SERVICE),
+    hmac(
+      hmac(hmac(`AWS4${config.secretAccessKey}`, dateStamp), config.region),
+      SERVICE,
+    ),
     "aws4_request",
   );
 }

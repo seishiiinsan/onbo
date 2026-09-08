@@ -106,7 +106,10 @@ export async function clientAddComment(
   formData: FormData,
 ): Promise<PortalFormState> {
   const token = String(formData.get("token") ?? "");
-  const { link, step } = await stepOfLink(token, String(formData.get("stepId")));
+  const { link, step } = await stepOfLink(
+    token,
+    String(formData.get("stepId")),
+  );
   const body = String(formData.get("body") ?? "").trim();
 
   if (body.length === 0) return { error: "Message vide." };
@@ -148,7 +151,10 @@ export async function clientAddCredential(
   formData: FormData,
 ): Promise<PortalFormState> {
   const token = String(formData.get("token") ?? "");
-  const { link, step } = await stepOfLink(token, String(formData.get("stepId")));
+  const { link, step } = await stepOfLink(
+    token,
+    String(formData.get("stepId")),
+  );
 
   const label = String(formData.get("label") ?? "").trim();
   const secret = String(formData.get("secret") ?? "");

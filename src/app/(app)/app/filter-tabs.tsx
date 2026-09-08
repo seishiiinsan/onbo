@@ -34,7 +34,9 @@ export function FilterTabs({
           <span
             className={cn(
               "tabular-nums",
-              current === tab.key ? "text-white/60" : "text-[var(--color-muted)]/70",
+              current === tab.key
+                ? "text-white/60"
+                : "text-[var(--color-muted)]/70",
             )}
           >
             {counts[tab.key] ?? 0}

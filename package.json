@@ -11,7 +11,13 @@
     "rekey": "node scripts/rekey.mjs",
     "migrate-storage": "node scripts/migrate-storage.mjs",
     "backup": "node scripts/backup.mjs",
-    "restore": "node scripts/restore.mjs"
+    "restore": "node scripts/restore.mjs",
+    "lint:check": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@prisma/client": "^6.1.0",
@@ -25,13 +31,19 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.7",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/archiver": "^8.0.0",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.1.6",
+    "prettier": "^3.9.6",
     "prisma": "^6.1.0",
     "tailwindcss": "^4.3.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

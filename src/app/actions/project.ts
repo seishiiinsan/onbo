@@ -41,28 +41,30 @@ async function requireStepEdit(ctx: TenantContext, stepId: string) {
 }
 
 /** Etapes creees par defaut : les 4 familles du brief. */
-const DEFAULT_STEPS: { title: string; kind: StepKind; description: string }[] = [
-  {
-    title: "Assets de marque",
-    kind: "ASSETS",
-    description: "Logo (vectoriel si possible), charte, photos, polices.",
-  },
-  {
-    title: "Accès techniques",
-    kind: "ACCESS",
-    description: "Hébergeur, nom de domaine, CMS, réseaux sociaux.",
-  },
-  {
-    title: "Brief projet",
-    kind: "BRIEF",
-    description: "Objectifs, cible, concurrents, exemples de sites appréciés.",
-  },
-  {
-    title: "Contenus",
-    kind: "CONTENT",
-    description: "Textes des pages, mentions légales, coordonnées.",
-  },
-];
+const DEFAULT_STEPS: { title: string; kind: StepKind; description: string }[] =
+  [
+    {
+      title: "Assets de marque",
+      kind: "ASSETS",
+      description: "Logo (vectoriel si possible), charte, photos, polices.",
+    },
+    {
+      title: "Accès techniques",
+      kind: "ACCESS",
+      description: "Hébergeur, nom de domaine, CMS, réseaux sociaux.",
+    },
+    {
+      title: "Brief projet",
+      kind: "BRIEF",
+      description:
+        "Objectifs, cible, concurrents, exemples de sites appréciés.",
+    },
+    {
+      title: "Contenus",
+      kind: "CONTENT",
+      description: "Textes des pages, mentions légales, coordonnées.",
+    },
+  ];
 
 export async function createProject(
   _prev: FormState,
@@ -146,7 +148,10 @@ export async function renameProject(
   return {};
 }
 
-export async function setProjectStatus(projectId: string, status: ProjectStatus) {
+export async function setProjectStatus(
+  projectId: string,
+  status: ProjectStatus,
+) {
   const { project } = await scopedProject(projectId);
   await prisma.project.update({ where: { id: project.id }, data: { status } });
   revalidatePath(`/app/projects/${project.id}`);
@@ -197,7 +202,9 @@ export async function setStepStatus(stepId: string, status: StepStatus) {
     actor: "AGENCY",
     actorName: ctx.email,
     action:
-      status === "VALIDATED" ? "a validé une étape" : "a changé le statut d'une étape",
+      status === "VALIDATED"
+        ? "a validé une étape"
+        : "a changé le statut d'une étape",
     detail: updated.title,
   });
   revalidatePath(`/app/projects/${step.projectId}`);
@@ -238,7 +245,9 @@ export async function attachClient(
   });
 
   const already = await prisma.clientProject.findUnique({
-    where: { clientId_projectId: { clientId: client.id, projectId: project.id } },
+    where: {
+      clientId_projectId: { clientId: client.id, projectId: project.id },
+    },
   });
   if (already) return { error: "Ce contact est déjà sur le projet." };
 
@@ -289,7 +298,9 @@ export async function sendPortalLink(
   _prev: SendLinkState,
   formData: FormData,
 ): Promise<SendLinkState> {
-  const { ctx, project } = await scopedProject(String(formData.get("projectId")));
+  const { ctx, project } = await scopedProject(
+    String(formData.get("projectId")),
+  );
   const ids = formData.getAll("clientProjectId").map(String).filter(Boolean);
   const message = String(formData.get("message") ?? "").trim();
 
@@ -299,7 +310,8 @@ export async function sendPortalLink(
     where: { id: { in: ids }, projectId: project.id },
     include: { client: true },
   });
-  if (links.length === 0) return { error: "Contact introuvable sur ce projet." };
+  if (links.length === 0)
+    return { error: "Contact introuvable sur ce projet." };
 
   const { sent } = await sendPortalInvites({
     projectId: project.id,
@@ -420,7 +432,10 @@ export async function reorderSteps(projectId: string, orderedIds: string[]) {
 
   await prisma.$transaction(
     valid.map((id, index) =>
-      prisma.onboardingStep.update({ where: { id }, data: { position: index } }),
+      prisma.onboardingStep.update({
+        where: { id },
+        data: { position: index },
+      }),
     ),
   );
 

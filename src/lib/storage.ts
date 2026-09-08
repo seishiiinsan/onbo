@@ -56,9 +56,7 @@ export async function storeFile(data: Buffer, contentType?: string) {
       contentType,
     });
     if (!response.ok) {
-      throw new Error(
-        `Stockage objet indisponible (HTTP ${response.status}).`,
-      );
+      throw new Error(`Stockage objet indisponible (HTTP ${response.status}).`);
     }
     return storageKey;
   }
@@ -78,9 +76,13 @@ export async function openFileStream(storageKey: string): Promise<Readable> {
 
   const response = await s3Request(config, "GET", storageKey);
   if (!response.ok || !response.body) {
-    throw new Error(`Fichier introuvable dans l'objet (HTTP ${response.status}).`);
+    throw new Error(
+      `Fichier introuvable dans l'objet (HTTP ${response.status}).`,
+    );
   }
-  return Readable.fromWeb(response.body as Parameters<typeof Readable.fromWeb>[0]);
+  return Readable.fromWeb(
+    response.body as Parameters<typeof Readable.fromWeb>[0],
+  );
 }
 
 export async function removeFile(storageKey: string) {

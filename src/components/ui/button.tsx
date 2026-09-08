@@ -16,8 +16,7 @@ const buttonVariants = cva(
         soft: "bg-[var(--color-brand-soft)] text-[var(--color-brand-ink)] hover:brightness-97",
         ghost:
           "text-[var(--color-muted)] hover:bg-black/[0.04] hover:text-[var(--color-ink)]",
-        danger:
-          "text-[var(--color-danger)] hover:bg-[var(--color-danger)]/8",
+        danger: "text-[var(--color-danger)] hover:bg-[var(--color-danger)]/8",
       },
       size: {
         default: "h-9 px-4 text-sm",
@@ -31,7 +30,8 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {}
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

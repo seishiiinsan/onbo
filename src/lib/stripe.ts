@@ -37,13 +37,17 @@ export function encodeForm(
             ...encodeForm(item as Record<string, unknown>, `${name}[${index}]`),
           );
         } else {
-          parts.push(`${encodeURIComponent(`${name}[${index}]`)}=${encodeURIComponent(String(item))}`);
+          parts.push(
+            `${encodeURIComponent(`${name}[${index}]`)}=${encodeURIComponent(String(item))}`,
+          );
         }
       });
     } else if (typeof value === "object") {
       parts.push(...encodeForm(value as Record<string, unknown>, name));
     } else {
-      parts.push(`${encodeURIComponent(name)}=${encodeURIComponent(String(value))}`);
+      parts.push(
+        `${encodeURIComponent(name)}=${encodeURIComponent(String(value))}`,
+      );
     }
   }
 
@@ -99,7 +103,10 @@ export function verifyWebhook(
   );
 
   const timestamp = Number(parts.t);
-  if (!timestamp || Math.abs(Date.now() / 1000 - timestamp) > toleranceSeconds) {
+  if (
+    !timestamp ||
+    Math.abs(Date.now() / 1000 - timestamp) > toleranceSeconds
+  ) {
     return false;
   }
 

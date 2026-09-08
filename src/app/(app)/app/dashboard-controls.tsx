@@ -96,7 +96,6 @@ export function DashboardControls({
           <option value="none">Sans groupement</option>
           <option value="client">Par client</option>
         </Select>
-
       </div>
     </div>
   );

@@ -50,7 +50,10 @@ export function ProjectTeamPanel({
         ) : (
           <ul className="mb-4 space-y-2">
             {assignments.map((assignment) => (
-              <li key={assignment.id} className="rounded-lg bg-[var(--color-canvas)] px-3 py-2">
+              <li
+                key={assignment.id}
+                className="rounded-lg bg-[var(--color-canvas)] px-3 py-2"
+              >
                 <div className="flex items-center justify-between gap-2">
                   <span className="min-w-0 flex-1 truncate text-sm">
                     {assignment.email}
@@ -115,9 +118,16 @@ export function ProjectTeamPanel({
               Peut voir les accès du client
             </label>
             {state.error && (
-              <p className="text-sm text-[var(--color-danger)]">{state.error}</p>
+              <p className="text-sm text-[var(--color-danger)]">
+                {state.error}
+              </p>
             )}
-            <Button type="submit" size="sm" variant="outline" disabled={pending}>
+            <Button
+              type="submit"
+              size="sm"
+              variant="outline"
+              disabled={pending}
+            >
               Affecter
             </Button>
           </form>

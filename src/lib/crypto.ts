@@ -42,7 +42,9 @@ export class UnknownKeyId extends Error {
 function decode(name: string, raw: string) {
   const buffer = Buffer.from(raw.trim(), "base64");
   if (buffer.length !== 32) {
-    throw new Error(`La clé « ${name} » doit contenir 32 octets encodés en base64.`);
+    throw new Error(
+      `La clé « ${name} » doit contenir 32 octets encodés en base64.`,
+    );
   }
   return buffer;
 }

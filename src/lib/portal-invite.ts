@@ -14,7 +14,11 @@ import { logActivity } from "@/lib/activity";
 export async function sendPortalInvites(input: {
   projectId: string;
   /// Contacts vises. Un contact sans email valide est ignore silencieusement.
-  recipients: { clientId?: string | null; email: string; name?: string | null }[];
+  recipients: {
+    clientId?: string | null;
+    email: string;
+    name?: string | null;
+  }[];
   message?: string | null;
   sentByUserId?: string | null;
   actorName?: string | null;

@@ -191,7 +191,9 @@ function PortalPreview() {
               </span>
               {row.label}
             </span>
-            <span className="text-xs text-[var(--color-muted)]">{row.state}</span>
+            <span className="text-xs text-[var(--color-muted)]">
+              {row.state}
+            </span>
           </li>
         ))}
       </ul>
@@ -232,16 +234,28 @@ export default function Home() {
           </span>
 
           <nav className="hidden items-center gap-6 text-sm text-[var(--color-muted)] md:flex">
-            <a href="#fonctionnalites" className="focusable rounded hover:text-[var(--color-ink)]">
+            <a
+              href="#fonctionnalites"
+              className="focusable rounded hover:text-[var(--color-ink)]"
+            >
               Fonctionnalités
             </a>
-            <a href="#securite" className="focusable rounded hover:text-[var(--color-ink)]">
+            <a
+              href="#securite"
+              className="focusable rounded hover:text-[var(--color-ink)]"
+            >
               Sécurité
             </a>
-            <a href="#tarifs" className="focusable rounded hover:text-[var(--color-ink)]">
+            <a
+              href="#tarifs"
+              className="focusable rounded hover:text-[var(--color-ink)]"
+            >
               Tarifs
             </a>
-            <a href="#faq" className="focusable rounded hover:text-[var(--color-ink)]">
+            <a
+              href="#faq"
+              className="focusable rounded hover:text-[var(--color-ink)]"
+            >
               FAQ
             </a>
           </nav>
@@ -434,7 +448,10 @@ export default function Home() {
                 body: "Dépôts, validations, révélations de secrets : tout est horodaté et attribué, côté agence comme côté client.",
               },
             ].map((block) => (
-              <article key={block.title} className="bg-[var(--color-surface)] p-6">
+              <article
+                key={block.title}
+                className="bg-[var(--color-surface)] p-6"
+              >
                 <p className="font-medium">{block.title}</p>
                 <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-muted)]">
                   {block.body}
@@ -518,7 +535,10 @@ export default function Home() {
 
         {/* FAQ */}
         <section id="faq" className="mx-auto max-w-5xl px-6 py-16">
-          <SectionTitle eyebrow="Questions" title="Ce qu'on nous demande le plus" />
+          <SectionTitle
+            eyebrow="Questions"
+            title="Ce qu'on nous demande le plus"
+          />
 
           <div className="grid gap-x-10 gap-y-8 md:grid-cols-2">
             {FAQ.map((entry) => (
@@ -541,7 +561,10 @@ export default function Home() {
               Créez votre espace en une minute. Vous n&apos;avez besoin que
               d&apos;une adresse email.
             </p>
-            <Link href="/login" className="focusable mt-6 inline-block rounded-full">
+            <Link
+              href="/login"
+              className="focusable mt-6 inline-block rounded-full"
+            >
               <Button variant="accent" size="lg">
                 Commencer
               </Button>
@@ -560,8 +583,8 @@ export default function Home() {
               </span>
             </span>
             <p className="mt-2 text-xs leading-relaxed text-[var(--color-muted)]">
-              Le portail d&apos;onboarding client des agences web.
-              Données hébergées en France.
+              Le portail d&apos;onboarding client des agences web. Données
+              hébergées en France.
             </p>
           </div>
 
@@ -569,17 +592,26 @@ export default function Home() {
             <p className="section-label mb-2">Produit</p>
             <ul className="space-y-1.5 text-[var(--color-muted)]">
               <li>
-                <a href="#fonctionnalites" className="focusable rounded hover:text-[var(--color-ink)]">
+                <a
+                  href="#fonctionnalites"
+                  className="focusable rounded hover:text-[var(--color-ink)]"
+                >
                   Fonctionnalités
                 </a>
               </li>
               <li>
-                <a href="#tarifs" className="focusable rounded hover:text-[var(--color-ink)]">
+                <a
+                  href="#tarifs"
+                  className="focusable rounded hover:text-[var(--color-ink)]"
+                >
                   Tarifs
                 </a>
               </li>
               <li>
-                <a href="#securite" className="focusable rounded hover:text-[var(--color-ink)]">
+                <a
+                  href="#securite"
+                  className="focusable rounded hover:text-[var(--color-ink)]"
+                >
                   Sécurité
                 </a>
               </li>
@@ -590,12 +622,18 @@ export default function Home() {
             <p className="section-label mb-2">Accès</p>
             <ul className="space-y-1.5 text-[var(--color-muted)]">
               <li>
-                <Link href="/login" className="focusable rounded hover:text-[var(--color-ink)]">
+                <Link
+                  href="/login"
+                  className="focusable rounded hover:text-[var(--color-ink)]"
+                >
                   Connexion
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="focusable rounded hover:text-[var(--color-ink)]">
+                <Link
+                  href="/login"
+                  className="focusable rounded hover:text-[var(--color-ink)]"
+                >
                   Créer un espace
                 </Link>
               </li>

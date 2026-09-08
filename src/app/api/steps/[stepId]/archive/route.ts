@@ -31,7 +31,9 @@ export async function GET(
   const archive = new ZipArchive({ zlib: { level: 6 } });
 
   for (const asset of step.assets) {
-    archive.append(await openFileStream(asset.storageKey), { name: asset.filename });
+    archive.append(await openFileStream(asset.storageKey), {
+      name: asset.filename,
+    });
   }
   void archive.finalize();
 

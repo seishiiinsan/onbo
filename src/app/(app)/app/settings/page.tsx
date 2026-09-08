@@ -1,10 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import {
-  daysLeftOfTrial,
-  planOf,
-  PLANS,
-  subscriptionOf,
-} from "@/lib/billing";
+import { daysLeftOfTrial, planOf, PLANS, subscriptionOf } from "@/lib/billing";
 import { stripeConfigured } from "@/lib/stripe";
 import { requireTenant } from "@/lib/tenant";
 import { PageHeader } from "@/components/page-header";
@@ -30,7 +25,9 @@ export default async function SettingsPage() {
           include: {
             _count: {
               select: {
-                projectMembers: { where: { project: { agencyId: ctx.agencyId } } },
+                projectMembers: {
+                  where: { project: { agencyId: ctx.agencyId } },
+                },
               },
             },
           },
@@ -59,12 +56,12 @@ export default async function SettingsPage() {
         <ProfileForm name={user.name ?? ""} email={user.email} />
 
         <BrandingForm
-        canEdit={ctx.role !== "MEMBER"}
-        agency={{
-          name: agency.name,
-          slug: agency.slug,
-          logoUrl: agency.logoUrl ?? "",
-          accentColor: agency.accentColor,
+          canEdit={ctx.role !== "MEMBER"}
+          agency={{
+            name: agency.name,
+            slug: agency.slug,
+            logoUrl: agency.logoUrl ?? "",
+            accentColor: agency.accentColor,
           }}
         />
 

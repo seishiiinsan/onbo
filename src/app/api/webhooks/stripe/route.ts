@@ -24,7 +24,9 @@ export async function POST(request: NextRequest) {
   if (!secret) return new NextResponse(null, { status: 404 });
 
   const payload = await request.text();
-  if (!verifyWebhook(payload, request.headers.get("stripe-signature"), secret)) {
+  if (
+    !verifyWebhook(payload, request.headers.get("stripe-signature"), secret)
+  ) {
     logger.warn("webhook Stripe refusé : signature invalide");
     return new NextResponse(null, { status: 400 });
   }
@@ -47,7 +49,10 @@ export async function POST(request: NextRequest) {
       if (agencyId && customer) {
         await prisma.subscription.updateMany({
           where: { agencyId },
-          data: { stripeCustomerId: customer, stripeSubscriptionId: subscriptionId },
+          data: {
+            stripeCustomerId: customer,
+            stripeSubscriptionId: subscriptionId,
+          },
         });
       }
 

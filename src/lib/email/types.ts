@@ -13,11 +13,7 @@ export type Mail = {
 };
 
 export type EmailCategory =
-  | "LOGIN"
-  | "PORTAL"
-  | "REMINDER"
-  | "NOTIFICATION"
-  | "OTHER";
+  "LOGIN" | "PORTAL" | "REMINDER" | "NOTIFICATION" | "OTHER";
 
 export type SendResult = { providerId?: string | null };
 

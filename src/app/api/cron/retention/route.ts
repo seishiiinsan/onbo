@@ -18,6 +18,9 @@ export async function POST(request: NextRequest) {
   // Les binaires ne sont pas en base : ils se suppriment un a un.
   for (const key of storageKeys) await removeFile(key);
 
-  logger.info("rétention appliquée", { ...result, binaires: storageKeys.length });
+  logger.info("rétention appliquée", {
+    ...result,
+    binaires: storageKeys.length,
+  });
   return NextResponse.json({ ...result, binaires: storageKeys.length });
 }
