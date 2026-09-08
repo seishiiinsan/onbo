@@ -5,6 +5,10 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Connexion directe pour les migrations : en preproduction, DATABASE_URL
+  // passe par un pooler (PgBouncer) qui ne sait pas jouer du DDL. Sur le
+  // serveur, les deux pointent vers la meme base.
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 /// Role dans l'agence.

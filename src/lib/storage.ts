@@ -61,6 +61,14 @@ export async function storeFile(data: Buffer, contentType?: string) {
     return storageKey;
   }
 
+  if (process.env.VERCEL) {
+    // Le systeme de fichiers y est en lecture seule : sans stockage objet,
+    // le depot echouerait a l'ecriture, plus tard et moins clairement.
+    throw new Error(
+      "Stockage objet non configuré : renseignez les variables S3_* pour déposer des fichiers.",
+    );
+  }
+
   await mkdir(ROOT, { recursive: true });
   await writeFile(pathFor(storageKey), data);
   return storageKey;
