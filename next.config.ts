@@ -36,7 +36,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // standalone sert au conteneur Docker ; sur Vercel, la plateforme fait sa
+  // propre mise en paquet et le mode standalone n'a pas lieu d'etre.
+  output: process.env.VERCEL ? undefined : "standalone",
   poweredByHeader: false,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

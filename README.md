@@ -59,6 +59,11 @@ Une fois reactive : merge sur `main` → GitHub Actions se connecte en SSH au VP
 Secrets GitHub requis : `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_APP_PATH`,
 `VPS_PORT` (optionnel).
 
+## Preprod
+
+`develop` est deploye sur Vercel (base Supabase, region Paris) en attendant le
+retour d'un VPS pour la production : cf. `docs/preprod-vercel.md`.
+
 ## Ce que fait l'application
 
 **Cote agence** (`/app`) : projets avec avancement, filtres (a valider,
