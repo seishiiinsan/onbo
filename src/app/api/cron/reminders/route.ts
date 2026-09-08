@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logger } from "@/lib/logger";
 import { runReminders } from "@/lib/reminders";
 
 export const runtime = "nodejs";
@@ -17,9 +18,7 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await runReminders();
-  console.log(
-    `> relances : ${result.sent} projet(s) relance(s) sur ${result.checked} candidat(s)`,
-  );
 
+  logger.info("relances envoyées", { tache: "relances", ...result });
   return NextResponse.json(result);
 }

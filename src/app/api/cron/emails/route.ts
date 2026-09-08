@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logger } from "@/lib/logger";
 import { flushEmailQueue } from "@/lib/email/queue";
 
 export const runtime = "nodejs";
@@ -17,10 +18,7 @@ export async function POST(request: NextRequest) {
 
   const result = await flushEmailQueue();
   if (result.picked > 0) {
-    console.log(
-      `> file email : ${result.sent} envoye(s), ${result.failed} en echec sur ${result.picked}`,
-    );
+    logger.info("file email rejouée", { tache: "file email", ...result });
   }
-
   return NextResponse.json(result);
 }

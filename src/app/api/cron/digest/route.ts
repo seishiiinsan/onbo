@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { logger } from "@/lib/logger";
 import { runDailyDigest } from "@/lib/notifications";
 import { purgeCounters } from "@/lib/rate-limit";
 
@@ -15,6 +16,10 @@ export async function POST(request: NextRequest) {
   const result = await runDailyDigest();
   // Les compteurs de debit expires n'ont plus d'usage (issue #34).
   const purge = await purgeCounters();
-  console.log(`> résumé quotidien : ${result.sent} destinataire(s)`);
+  logger.info("résumé quotidien envoyé", {
+    tache: "résumé quotidien",
+    ...result,
+    ...purge,
+  });
   return NextResponse.json({ ...result, ...purge });
 }

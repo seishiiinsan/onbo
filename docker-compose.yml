@@ -19,6 +19,12 @@ services:
     build:
       context: .
     restart: unless-stopped
+    # Logs JSON, rotation locale : pas de disque plein sur un incident.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     depends_on:
       db:
         condition: service_healthy
@@ -35,6 +41,11 @@ services:
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
       ANTIVIRUS_URL: ${ANTIVIRUS_URL:-}
+      # Observabilite (issue #35)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      APP_RELEASE: ${APP_RELEASE:-}
       QUOTA_PROJECT_BYTES: ${QUOTA_PROJECT_BYTES:-}
       QUOTA_AGENCY_BYTES: ${QUOTA_AGENCY_BYTES:-}
       ONBO_ENCRYPTION_KEY: ${ONBO_ENCRYPTION_KEY:?cle de chiffrement manquante}
@@ -79,6 +90,37 @@ services:
         if [ $$((tick % 1440)) -eq 0 ]; then
           curl -s -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/cron/digest >/dev/null || true;
         fi;
+      done"
+
+  # Sonde externe (issue #35) : /api/health et le portail, toutes les 60 s.
+  # Deux echecs consecutifs declenchent l'alerte, soit moins de 2 minutes.
+  probe:
+    image: alpine:3.20
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      PROBE_URLS: ${PROBE_URLS:-http://app:3000/api/health}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
+    command: >
+      sh -c "apk add --no-cache curl >/dev/null &&
+      fails=0;
+      while true; do
+        ok=1;
+        for url in $$PROBE_URLS; do
+          curl -fsS --max-time 10 \"$$url\" >/dev/null || ok=0;
+        done;
+        if [ $$ok -eq 1 ]; then
+          fails=0;
+        else
+          fails=$$((fails + 1));
+          if [ $$fails -eq 2 ] && [ -n \"$$ALERT_WEBHOOK_URL\" ]; then
+            curl -fsS -X POST -H 'content-type: application/json' \
+              -d '{\"text\":\"Onbo : sonde en echec, service indisponible\"}' \
+              \"$$ALERT_WEBHOOK_URL\" >/dev/null || true;
+          fi;
+        fi;
+        sleep 60;
       done"
 
 volumes:

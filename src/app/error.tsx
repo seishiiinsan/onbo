@@ -12,7 +12,17 @@ export default function GlobalError({
 }) {
   useEffect(() => {
     // Le detail reste cote serveur : ici on ne dispose que de l'empreinte.
-    console.error(error);
+    // Elle part au suivi d'erreurs pour etre rapprochee de la trace serveur
+    // (issue #35).
+    void fetch("/api/telemetry/error", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        message: error.message,
+        digest: error.digest,
+        path: window.location.pathname,
+      }),
+    }).catch(() => undefined);
   }, [error]);
 
   return (
