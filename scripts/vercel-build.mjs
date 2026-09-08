@@ -14,6 +14,14 @@ function run(command, args) {
   return result.status ?? 1;
 }
 
+// npm bloque desormais les scripts postinstall : le client Prisma ne se
+// genere plus tout seul a l'installation, il faut le demander ici.
+console.log("> génération du client Prisma");
+if (run("npx", ["prisma", "generate"]) !== 0) {
+  console.error("! génération du client Prisma en échec");
+  process.exit(1);
+}
+
 if (process.env.DATABASE_URL) {
   console.log("> migrations Prisma");
   const status = run("npx", ["prisma", "migrate", "deploy"]);
