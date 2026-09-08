@@ -8,6 +8,7 @@ import { MissingEncryptionKey, seal } from "@/lib/crypto";
 import { prisma } from "@/lib/prisma";
 import { resolvePortalToken } from "@/lib/portal";
 import { notifyProject } from "@/lib/notifications";
+import { anonymize, callerIp, guard, RULES } from "@/lib/rate-limit";
 
 /**
  * Mise a jour d'une etape depuis le portail client.
@@ -34,6 +35,8 @@ export async function clientSetStepStatus(
 
   // Une etape deja validee par l'agence n'est plus modifiable par le client.
   if (step.status === "VALIDATED") return;
+
+  if (!(await guardPortal(token, "PORTAL_ACTION", link.projectId))) return;
 
   const updated = await prisma.onboardingStep.update({
     where: { id: step.id },
@@ -77,6 +80,27 @@ async function stepOfLink(token: string, stepId: string) {
   return { link, step };
 }
 
+/**
+ * Cadence des actions client, par token de portail (issue #34).
+ *
+ * La limite porte sur le lien, pas sur l'IP : plusieurs personnes chez le
+ * client peuvent partager une sortie internet.
+ */
+async function guardPortal(
+  token: string,
+  kind: "PORTAL_MESSAGE" | "PORTAL_ACTION",
+  projectId: string,
+) {
+  return guard({
+    kind,
+    bucket: `portal:${kind}:${token}`,
+    rule: kind === "PORTAL_MESSAGE" ? RULES.portalMessage : RULES.portalAction,
+    ip: anonymize(await callerIp()),
+    projectId,
+    path: "/p",
+  });
+}
+
 export async function clientAddComment(
   _prev: PortalFormState,
   formData: FormData,
@@ -86,6 +110,10 @@ export async function clientAddComment(
   const body = String(formData.get("body") ?? "").trim();
 
   if (body.length === 0) return { error: "Message vide." };
+
+  if (!(await guardPortal(token, "PORTAL_MESSAGE", link.projectId))) {
+    return { error: "Trop de messages en peu de temps. Réessayez plus tard." };
+  }
 
   await prisma.comment.create({
     data: { body, author: "CLIENT", stepId: step.id, internal: false },
@@ -124,6 +152,10 @@ export async function clientAddCredential(
 
   const label = String(formData.get("label") ?? "").trim();
   const secret = String(formData.get("secret") ?? "");
+
+  if (!(await guardPortal(token, "PORTAL_ACTION", link.projectId))) {
+    return { error: "Trop d'envois en peu de temps. Réessayez plus tard." };
+  }
 
   if (label.length < 2) return { error: "Indiquez de quel accès il s'agit." };
   if (secret.length === 0) return { error: "Mot de passe ou clé manquant." };

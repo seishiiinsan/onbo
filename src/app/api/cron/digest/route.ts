@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { runDailyDigest } from "@/lib/notifications";
+import { purgeCounters } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +13,8 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await runDailyDigest();
+  // Les compteurs de debit expires n'ont plus d'usage (issue #34).
+  const purge = await purgeCounters();
   console.log(`> résumé quotidien : ${result.sent} destinataire(s)`);
-  return NextResponse.json(result);
+  return NextResponse.json({ ...result, ...purge });
 }

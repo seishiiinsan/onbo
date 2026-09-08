@@ -4,6 +4,15 @@ import { getCurrentUser } from "@/lib/auth";
 import { resolvePortalToken } from "@/lib/portal";
 import { prisma } from "@/lib/prisma";
 import {
+  anonymize,
+  callerIp,
+  guard,
+  logDenial,
+  quotas,
+  RULES,
+  storedBytes,
+} from "@/lib/rate-limit";
+import {
   ALLOWED_MIME,
   MAX_UPLOAD_BYTES,
   safeFilename,
@@ -46,6 +55,61 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Étape introuvable." }, { status: 404 });
   }
 
+  const ip = anonymize(await callerIp());
+
+  // Cadence : par token de portail cote client, par IP cote staff (issue #34).
+  const allowed = await guard({
+    kind: "PORTAL_UPLOAD",
+    bucket: token ? `upload:token:${token}` : `upload:ip:${ip}`,
+    rule: RULES.portalUpload,
+    ip,
+    projectId: step.projectId,
+    path: "/api/upload",
+  });
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Trop de dépôts en peu de temps. Réessayez plus tard." },
+      { status: 429 },
+    );
+  }
+
+  // Volume : quota par projet puis par agence, avant d'ecrire le binaire.
+  const limits = quotas();
+  const [projectBytes, agencyBytes] = await Promise.all([
+    storedBytes({ projectId: step.projectId }),
+    storedBytes({ agencyId: step.project.agencyId }),
+  ]);
+
+  if (projectBytes + file.size > limits.project) {
+    await logDenial({
+      kind: "QUOTA_PROJECT",
+      bucket: `quota:project:${step.projectId}`,
+      ip,
+      projectId: step.projectId,
+      path: "/api/upload",
+      detail: `${projectBytes} + ${file.size} > ${limits.project}`,
+    });
+    return NextResponse.json(
+      { error: "Espace de stockage du projet atteint." },
+      { status: 507 },
+    );
+  }
+
+  if (agencyBytes + file.size > limits.agency) {
+    await logDenial({
+      kind: "QUOTA_AGENCY",
+      bucket: `quota:agency:${step.project.agencyId}`,
+      ip,
+      projectId: step.projectId,
+      path: "/api/upload",
+      detail: `${agencyBytes} + ${file.size} > ${limits.agency}`,
+    });
+    return NextResponse.json(
+      { error: "Espace de stockage de l'agence atteint." },
+      { status: 507 },
+    );
+  }
+
   const storageKey = await storeFile(
     Buffer.from(await file.arrayBuffer()),
   );
@@ -72,13 +136,20 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ id: asset.id, filename: asset.filename });
 }
 
+/** Le projet et son agence servent aux quotas de volume (issue #34). */
+const STEP_SELECT = {
+  id: true,
+  projectId: true,
+  project: { select: { agencyId: true } },
+} as const;
+
 async function authorizeStep(stepId: string, token: string) {
   if (token) {
     const link = await resolvePortalToken(token);
     if (!link) return null;
     return prisma.onboardingStep.findFirst({
       where: { id: stepId, projectId: link.projectId },
-      select: { id: true },
+      select: STEP_SELECT,
     });
   }
 
@@ -103,6 +174,6 @@ async function authorizeStep(stepId: string, token: string) {
         ],
       },
     },
-    select: { id: true },
+    select: STEP_SELECT,
   });
 }

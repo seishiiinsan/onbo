@@ -429,3 +429,45 @@ model Notification {
   @@index([userId, createdAt])
   @@index([projectId])
 }
+
+enum AbuseKind {
+  LOGIN_IP
+  LOGIN_EMAIL
+  PORTAL_PROBE
+  PORTAL_UPLOAD
+  PORTAL_MESSAGE
+  PORTAL_ACTION
+  QUOTA_PROJECT
+  QUOTA_AGENCY
+}
+
+/// Compteur de fenetre glissante, partage par toutes les instances (issue #34).
+///
+/// En base plutot qu'en memoire : le compteur survit a un redemarrage et
+/// reste juste si l'application tourne en plusieurs exemplaires.
+model RateCounter {
+  bucket      String
+  windowStart DateTime
+  count       Int      @default(0)
+  expiresAt   DateTime
+
+  @@id([bucket, windowStart])
+  @@index([expiresAt])
+}
+
+/// Journal des refus, exploitable en cas d'incident (issue #34).
+model AbuseEvent {
+  id        String    @id @default(cuid())
+  kind      AbuseKind
+  /// Cle limitee, deja anonymisee cote appelant (IP hachee, email, token).
+  bucket    String
+  ip        String?
+  email     String?
+  projectId String?
+  path      String?
+  detail    String?
+  createdAt DateTime  @default(now())
+
+  @@index([kind, createdAt])
+  @@index([createdAt])
+}

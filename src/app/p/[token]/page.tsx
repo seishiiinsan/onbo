@@ -2,6 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { dictionary, fill, parseLocale } from "@/lib/portal-i18n";
 import { resolvePortalToken, touchPortalLink } from "@/lib/portal";
+import {
+  anonymize,
+  callerIp,
+  notePortalProbe,
+  portalProbeBlocked,
+} from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { progressOf } from "@/lib/progress";
 import { PortalHeader } from "./portal-header";
@@ -22,8 +28,16 @@ export default async function PortalPage({
   const locale = parseLocale(lang);
   const t = dictionary(locale);
 
+  // Le portail est public par construction : on refuse l'IP qui teste des
+  // tokens au hasard avant meme d'interroger la base (issue #34).
+  const ip = anonymize(await callerIp());
+  if (await portalProbeBlocked(ip)) notFound();
+
   const link = await resolvePortalToken(token);
-  if (!link) notFound();
+  if (!link) {
+    await notePortalProbe(ip, token);
+    notFound();
+  }
   await touchPortalLink(link.id);
 
   const { project } = link;
