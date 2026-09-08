@@ -53,8 +53,18 @@ export async function touchPortalLink(id: string) {
   });
 }
 
+/**
+ * URL du portail client.
+ *
+ * PORTAL_URL permet de servir les portails depuis un sous-domaine dedie
+ * (issue #30) : le proxy y reecrit `/<token>` vers `/p/<token>`. Sans cette
+ * variable, on reste sur le domaine principal.
+ */
 export function portalUrl(token: string, host?: string | null) {
+  const portalBase = process.env.PORTAL_URL?.replace(/\/+$/, "");
+  if (portalBase) return `${portalBase}/${token}`;
+
   const base =
-    process.env.APP_URL ?? (host ? `http://${host}` : "http://localhost:3000");
+    process.env.APP_URL ?? (host ? `https://${host}` : "http://localhost:3000");
   return `${base}/p/${token}`;
 }

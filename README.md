@@ -12,9 +12,9 @@ L'agence suit l'avancement en temps reel.
 | Front/API  | Next.js 15 (App Router, TypeScript, standalone)      |
 | ORM        | Prisma                                               |
 | BDD        | PostgreSQL 16 — dans Docker, interne, non exposee    |
-| Conteneurs | Docker Compose (app + db)                            |
+| Conteneurs | Docker Compose (app + db + proxy + cron + sonde)      |
 | CI/CD      | GitHub Actions → SSH deploy sur push `main`          |
-| Prod       | `http://<vps-ip>:3000` (port reglable via `APP_PORT`) |
+| Prod       | `https://<domaine>` — Caddy, Let's Encrypt automatique |
 
 ## Dev local
 
@@ -30,12 +30,16 @@ npm run dev                  # http://localhost:3000
 
 ```bash
 cp .env.example .env
-# renseigner : POSTGRES_PASSWORD, APP_URL, puis generer les deux secrets
+# renseigner : POSTGRES_PASSWORD, DOMAIN, ACME_EMAIL, APP_URL,
+# puis generer les deux secrets
 openssl rand -base64 32   # -> ONBO_ENCRYPTION_KEY (chiffrement des acces client)
 openssl rand -hex 24      # -> CRON_SECRET (declenchement des relances)
 
 docker compose up -d --build
 ```
+
+Le port applicatif n'est plus publie : tout passe par le proxy, qui obtient et
+renouvelle les certificats seul (cf. `docs/https.md`).
 
 `ONBO_ENCRYPTION_KEY` est obligatoire : sans elle le conteneur refuse de
 demarrer, plutot que de stocker des acces client en clair. **La perdre rend

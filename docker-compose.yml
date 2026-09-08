@@ -32,6 +32,8 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-onbo}:${POSTGRES_PASSWORD:-onbo}@db:5432/${POSTGRES_DB:-onbo}?schema=public
       NODE_ENV: production
       APP_URL: ${APP_URL:-http://localhost:3000}
+      # Sous-domaine des portails clients, si configure (issue #30).
+      PORTAL_URL: ${PORTAL_URL:-}
       UPLOAD_DIR: /app/uploads
       # Stockage objet UE (issue #32) : sans ces variables, volume disque.
       S3_ENDPOINT: ${S3_ENDPOINT:-}
@@ -65,8 +67,28 @@ services:
       SCALEWAY_REGION: ${SCALEWAY_REGION:-fr-par}
     volumes:
       - uploads:/app/uploads
+    # Aucun port publie (issue #30) : tout passe par le proxy.
+    expose:
+      - "3000"
+
+  # Terminaison TLS et certificats Let's Encrypt automatiques (issue #30).
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    environment:
+      DOMAIN: ${DOMAIN:?domaine manquant}
+      PORTAL_DOMAIN: ${PORTAL_DOMAIN:-portail.${DOMAIN}}
+      ACME_EMAIL: ${ACME_EMAIL:?adresse ACME manquante}
     ports:
-      - "${APP_BIND:-0.0.0.0}:${APP_PORT:-3000}:3000"
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
 
   # Declencheur des taches planifiees : relances (horaire) et file d'emails
   # (toutes les minutes, pour la reprise sur echec).
@@ -126,3 +148,5 @@ services:
 volumes:
   db_data:
   uploads:
+  caddy_data:
+  caddy_config:
