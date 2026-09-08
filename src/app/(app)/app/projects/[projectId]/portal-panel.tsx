@@ -1,9 +1,23 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { regeneratePortalLink, revokePortalLink } from "@/app/actions/project";
+import { useActionState, useState, useTransition } from "react";
+import {
+  regeneratePortalLink,
+  revokePortalLink,
+  sendPortalLink,
+  type SendLinkState,
+} from "@/app/actions/project";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export type PortalContact = {
+  /** Identifiant du rattachement ClientProject, seul accepte par l'action. */
+  id: string;
+  email: string;
+  name: string | null;
+  /** Dernier envoi du lien a ce contact, deja formate. */
+  sentAt: string | null;
+};
 
 type Props = {
   projectId: string;
@@ -11,15 +25,27 @@ type Props = {
   /** Chemin du lien actif (`/p/<token>`), complete par l'origine cote client. */
   activeUrl: string | null;
   lastUsedAt: string | null;
+  contacts: PortalContact[];
+  /** Message par defaut, deja aux couleurs de l'agence. */
+  defaultMessage: string;
 };
+
+const initialSend: SendLinkState = {};
 
 export function PortalPanel({
   projectId,
   hasActiveLink,
   activeUrl,
   lastUsedAt,
+  contacts,
+  defaultMessage,
 }: Props) {
   const [pending, startTransition] = useTransition();
+  const [sendState, sendAction, sending] = useActionState(
+    sendPortalLink,
+    initialSend,
+  );
+  const [compose, setCompose] = useState(false);
   const [copied, setCopied] = useState(false);
   const [path, setPath] = useState<string | null>(activeUrl);
 
@@ -109,6 +135,109 @@ export function PortalPanel({
                 ? `Dernier accès client : ${lastUsedAt}`
                 : "Jamais ouvert par le client."}
             </p>
+
+            <div className="mt-4 border-t border-[var(--color-line)] pt-4">
+              {contacts.length === 0 ? (
+                <p className="text-xs text-[var(--color-muted)]">
+                  Ajoutez un contact au projet pour lui envoyer le lien
+                  directement depuis Onbo.
+                </p>
+              ) : !compose ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    size="sm"
+                    variant="accent"
+                    onClick={() => setCompose(true)}
+                  >
+                    Envoyer le lien
+                  </Button>
+                  {sendState.sent ? (
+                    <span className="text-xs text-[var(--color-muted)]">
+                      Envoyé à {sendState.sent} contact
+                      {sendState.sent > 1 ? "s" : ""}.
+                    </span>
+                  ) : null}
+                </div>
+              ) : (
+                <form action={sendAction} className="space-y-3">
+                  <input type="hidden" name="projectId" value={projectId} />
+
+                  <fieldset className="space-y-1.5">
+                    <legend className="text-xs font-medium">
+                      Destinataires
+                    </legend>
+                    {contacts.map((contact) => (
+                      <label
+                        key={contact.id}
+                        className="flex items-start gap-2 text-xs"
+                      >
+                        <input
+                          type="checkbox"
+                          name="clientProjectId"
+                          value={contact.id}
+                          defaultChecked
+                          className="mt-0.5"
+                        />
+                        <span>
+                          {contact.name
+                            ? `${contact.name} — ${contact.email}`
+                            : contact.email}
+                          <span className="block text-[var(--color-muted)]">
+                            {contact.sentAt
+                              ? `Lien envoyé le ${contact.sentAt}`
+                              : "Lien jamais envoyé"}
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
+
+                  <div>
+                    <label
+                      htmlFor="portal-message"
+                      className="text-xs font-medium"
+                    >
+                      Message
+                    </label>
+                    <textarea
+                      id="portal-message"
+                      name="message"
+                      rows={5}
+                      defaultValue={defaultMessage}
+                      className="mt-1 w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] p-2 text-xs leading-relaxed"
+                    />
+                    <p className="mt-1 text-xs text-[var(--color-muted)]">
+                      Le lien et vos couleurs sont ajoutés automatiquement.
+                    </p>
+                  </div>
+
+                  {sendState.error && (
+                    <p className="text-xs text-[var(--color-danger)]">
+                      {sendState.error}
+                    </p>
+                  )}
+
+                  <div className="flex gap-2">
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant="accent"
+                      disabled={sending}
+                    >
+                      {sending ? "Envoi…" : "Envoyer"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setCompose(false)}
+                    >
+                      Annuler
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
           </>
         ) : (
           <>

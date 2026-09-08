@@ -146,6 +146,7 @@ model Project {
   portalLinks PortalLink[]
   members     ProjectMember[]
   activities  Activity[]
+  invites     PortalInvite[]
 
   @@index([agencyId])
 }
@@ -371,4 +372,27 @@ model EmailMessage {
   @@index([providerId])
   @@index([projectId])
   @@index([to])
+}
+
+/// Trace d'envoi du lien de portail au client (issue #38).
+///
+/// L'ouverture est deja horodatee sur PortalLink.lastUsedAt : cette table
+/// repond a l'autre moitie de la question, « le lien est-il parti, quand,
+/// a qui, et l'email est-il bien passe ? ».
+model PortalInvite {
+  id             String   @id @default(cuid())
+  projectId      String
+  /// Contact vise. Null si le contact a ete detache depuis.
+  clientId       String?
+  email          String
+  portalLinkId   String?
+  message        String?
+  /// Ligne correspondante dans EmailMessage : statut, rebond, erreur.
+  emailMessageId String?
+  sentByUserId   String?
+  sentAt         DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, sentAt])
 }

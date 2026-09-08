@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireProjectAccess } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
+import { lastInvitesByEmail } from "@/lib/portal-invite";
 import { progressOf } from "@/lib/progress";
 import { requireTenant } from "@/lib/tenant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +62,7 @@ export default async function ProjectPage({
   const project = await prisma.project.findFirst({
     where: { id: projectId },
     include: {
+      agency: true,
       steps: {
         orderBy: { position: "asc" },
         include: {
@@ -90,6 +92,7 @@ export default async function ProjectPage({
 
   const progress = progressOf(project.steps);
   const activeLink = project.portalLinks[0] ?? null;
+  const invites = await lastInvitesByEmail(project.id);
   const submitted = project.steps.filter(
     (step) => step.status === "SUBMITTED",
   ).length;
@@ -251,6 +254,22 @@ export default async function ProjectPage({
             lastUsedAt={
               activeLink?.lastUsedAt ? dateTime.format(activeLink.lastUsedAt) : null
             }
+            contacts={project.clients.map((link) => ({
+              id: link.id,
+              email: link.client.email,
+              name: link.client.name,
+              sentAt: (() => {
+                const invite = invites.get(link.client.email);
+                return invite ? dateTime.format(invite.sentAt) : null;
+              })(),
+            }))}
+            defaultMessage={[
+              "Bonjour,",
+              "",
+              `${project.agency.name} a préparé votre espace pour ${project.name}. Vous y déposez les éléments attendus et suivez l'avancement en temps réel.`,
+              "",
+              "Aucun compte à créer : ce lien vous identifie.",
+            ].join("\n")}
           />
           <ClientsPanel
             projectId={project.id}
