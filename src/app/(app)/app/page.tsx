@@ -40,9 +40,21 @@ export default async function DashboardPage({
   const projects = await prisma.project.findMany({
     where: projectScope(ctx),
     orderBy: { updatedAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      dueDate: true,
+      updatedAt: true,
       steps: { select: { status: true, updatedAt: true, required: true } },
-      clients: { include: { client: true } },
+      // Seul le premier contact sert d'etiquette : inutile de tous les lire.
+      clients: {
+        take: 1,
+        orderBy: { createdAt: "asc" },
+        select: {
+          client: { select: { company: true, name: true, email: true } },
+        },
+      },
       _count: { select: { clients: true } },
     },
   });

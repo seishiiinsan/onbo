@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import type { MembershipRole } from "@prisma/client";
@@ -17,30 +18,53 @@ export const AGENCY_COOKIE = "onbo_agency";
 export type TenantContext = {
   userId: string;
   email: string;
+  userName: string | null;
   agencyId: string;
   agencySlug: string;
   agencyName: string;
   role: MembershipRole;
+  /// Branding de l'agence active : evite une seconde lecture dans le layout.
+  agency: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+    accentColor: string;
+  };
+  /// Espaces de l'utilisateur, pour le selecteur. Deja charge ici.
+  agencies: { id: string; name: string; slug: string }[];
 };
 
 /** Exige une session. Redirige vers /login sinon. */
-export async function requireUser() {
+export const requireUser = cache(async function requireUser() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   return user;
-}
+});
 
 /**
  * Exige une session ET une agence.
  * - Pas d'agence du tout -> /onboarding (creation d'espace).
  * - Slug demande hors des agences de l'utilisateur -> 404, sans revelation.
  */
-export async function requireTenant(slug?: string): Promise<TenantContext> {
+export const requireTenant = cache(async function requireTenant(
+  slug?: string,
+): Promise<TenantContext> {
   const user = await requireUser();
 
   const memberships = await prisma.membership.findMany({
     where: { userId: user.id },
-    include: { agency: true },
+    include: {
+      agency: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          logoUrl: true,
+          accentColor: true,
+        },
+      },
+    },
     orderBy: { joinedAt: "asc" },
   });
 
@@ -59,12 +83,15 @@ export async function requireTenant(slug?: string): Promise<TenantContext> {
   return {
     userId: user.id,
     email: user.email,
+    userName: user.name,
     agencyId: membership.agencyId,
     agencySlug: membership.agency.slug,
     agencyName: membership.agency.name,
     role: membership.role,
+    agency: membership.agency,
+    agencies: memberships.map((m) => m.agency),
   };
-}
+});
 
 /** Agences de l'utilisateur, pour le selecteur d'espace. */
 export async function listUserAgencies(userId: string) {
