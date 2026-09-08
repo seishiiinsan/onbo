@@ -1,0 +1,42 @@
+# Reverse proxy et certificats (issue #30).
+#
+# Caddy obtient et renouvelle les certificats Let's Encrypt tout seul. Le port
+# applicatif n'est plus publie : tout entre par ici.
+{
+	email {$ACME_EMAIL}
+}
+
+# Domaine principal : application et portails en /p/<token>.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+}
+
+# Sous-domaine des portails clients : portail.example.fr/<token>.
+# Le lien envoye au client ne montre alors ni /p/ ni l'espace agence.
+{$PORTAL_DOMAIN} {
+	encode zstd gzip
+
+	# /<token> -> /p/<token>, le reste (assets, API) passe tel quel.
+	@token path_regexp token ^/([A-Za-z0-9_-]{20,})$
+	rewrite @token /p/{re.token.1}
+
+	reverse_proxy app:3000
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}
