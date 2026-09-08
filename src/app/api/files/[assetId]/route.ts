@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resolvePortalToken } from "@/lib/portal";
 import { prisma } from "@/lib/prisma";
-import { readFileStream } from "@/lib/storage";
+import { openFileStream } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -24,7 +24,7 @@ export async function GET(
     return new NextResponse(null, { status: 404 });
   }
 
-  const stream = readFileStream(asset.storageKey);
+  const stream = await openFileStream(asset.storageKey);
 
   // Les images peuvent s'afficher dans la page (apercu, item 21) ; tout le
   // reste est force en telechargement.
