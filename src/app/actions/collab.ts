@@ -89,6 +89,7 @@ export async function addCredential(
         secretCipher: sealed.cipher,
         secretIv: sealed.iv,
         secretTag: sealed.tag,
+        keyId: sealed.keyId,
         stepId: step.id,
       },
     });
@@ -124,6 +125,7 @@ export async function revealCredential(credentialId: string) {
     cipher: credential.secretCipher,
     iv: credential.secretIv,
     tag: credential.secretTag,
+    keyId: credential.keyId,
   });
 }
 

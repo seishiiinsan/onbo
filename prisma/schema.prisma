@@ -281,6 +281,9 @@ model Credential {
   secretCipher String
   secretIv     String
   secretTag    String
+  /// Cle ayant chiffre ce secret (issue #33). Les secrets anterieurs a la
+  /// rotation portent l'identifiant historique k0.
+  keyId        String         @default("k0")
   notes        String?
   stepId       String
   createdAt    DateTime       @default(now())
@@ -289,6 +292,7 @@ model Credential {
   accessLog CredentialAccess[]
 
   @@index([stepId])
+  @@index([keyId])
 }
 
 /// Journal des revelations de secret : qui a lu quoi, et quand.

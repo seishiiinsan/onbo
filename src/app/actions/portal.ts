@@ -171,6 +171,7 @@ export async function clientAddCredential(
         secretCipher: sealed.cipher,
         secretIv: sealed.iv,
         secretTag: sealed.tag,
+        keyId: sealed.keyId,
         stepId: step.id,
       },
     });

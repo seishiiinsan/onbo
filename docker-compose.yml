@@ -28,6 +28,9 @@ services:
       APP_URL: ${APP_URL:-http://localhost:3000}
       UPLOAD_DIR: /app/uploads
       ONBO_ENCRYPTION_KEY: ${ONBO_ENCRYPTION_KEY:?cle de chiffrement manquante}
+      # Rotation (issue #33) : trousseau "k0:...,k1:..." + cle d'ecriture.
+      ONBO_ENCRYPTION_KEYS: ${ONBO_ENCRYPTION_KEYS:-}
+      ONBO_ENCRYPTION_KEY_ID: ${ONBO_ENCRYPTION_KEY_ID:-}
       CRON_SECRET: ${CRON_SECRET:-}
       # Emails (issue #29) : console par defaut, sinon brevo/postmark/scaleway.
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
