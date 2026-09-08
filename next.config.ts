@@ -40,6 +40,8 @@ const nextConfig: NextConfig = {
   // propre mise en paquet et le mode standalone n'a pas lieu d'etre.
   output: process.env.VERCEL ? undefined : "standalone",
   poweredByHeader: false,
+  // Reduit le JS envoye : seules les icones reellement utilisees partent.
+  experimental: { optimizePackageImports: ["lucide-react"] },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

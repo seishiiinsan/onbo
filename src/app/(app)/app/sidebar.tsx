@@ -15,7 +15,6 @@ import { switchAgency } from "@/app/actions/agency";
 import { LogoMark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { NotificationsBell, type NotificationItem } from "./notifications-bell";
 import { UserMenu } from "./user-menu";
 
 /**
@@ -36,10 +35,10 @@ type Props = {
   email: string;
   userName: string;
   roleLabel: string;
-  /** Etapes en attente de validation, tous projets visibles confondus. */
-  awaitingCount: number;
-  notifications: NotificationItem[];
-  unreadNotifications: number;
+  /** Compteur d'etapes a valider, rendu par le serveur en differe. */
+  awaitingSlot: React.ReactNode;
+  /** Centre de notifications, rendu par le serveur en differe. */
+  notificationsSlot: React.ReactNode;
   agencies: { id: string; name: string; active: boolean }[];
 };
 
@@ -50,9 +49,8 @@ export function Sidebar({
   email,
   userName,
   roleLabel,
-  awaitingCount,
-  notifications,
-  unreadNotifications,
+  awaitingSlot,
+  notificationsSlot,
   agencies,
 }: Props) {
   const pathname = usePathname();
@@ -161,11 +159,10 @@ export function Sidebar({
         </Button>
       </Link>
 
-      <NotificationsBell
-        items={notifications}
-        unread={unreadNotifications}
-        compact={compact}
-      />
+      {/* Le libelle disparait quand le rail est replie. */}
+      <div className={cn(compact && "[&_[data-label]]:hidden")}>
+        {notificationsSlot}
+      </div>
 
       <nav className="flex-1">
         {!compact && <p className="section-label mb-2 px-3">Pilotage</p>}
@@ -196,15 +193,16 @@ export function Sidebar({
                   <Icon size={16} className="shrink-0" />
                   {!compact && item.label}
 
-                  {/* Compteur des etapes a valider (item 6) */}
-                  {item.exact && awaitingCount > 0 && (
+                  {/* Compteur des etapes a valider (item 6). empty:hidden :
+                      tant que le compte n'est pas arrive, rien ne s'affiche. */}
+                  {item.exact && (
                     <span
                       className={cn(
-                        "ml-auto rounded-full bg-[var(--color-submitted-soft)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-submitted)]",
+                        "ml-auto rounded-full bg-[var(--color-submitted-soft)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-submitted)] empty:hidden",
                         compact && "absolute right-1 top-1 ml-0 px-1 py-0",
                       )}
                     >
-                      {awaitingCount}
+                      {awaitingSlot}
                     </span>
                   )}
                 </Link>

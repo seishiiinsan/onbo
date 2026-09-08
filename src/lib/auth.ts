@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
@@ -97,8 +98,14 @@ export function sessionCookie(token: string, expiresAt: Date) {
   };
 }
 
-/** Utilisateur connecte, ou null. */
-export async function getCurrentUser() {
+/**
+ * Utilisateur connecte, ou null.
+ *
+ * Memoise par requete (cache de React) : le layout, la page et les actions
+ * partagent la meme resolution de session au lieu d'interroger la base
+ * chacun de leur cote.
+ */
+export const getCurrentUser = cache(async () => {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
@@ -110,7 +117,7 @@ export async function getCurrentUser() {
 
   if (!session || session.expiresAt < new Date()) return null;
   return session.user;
-}
+});
 
 export async function destroySession() {
   const jar = await cookies();

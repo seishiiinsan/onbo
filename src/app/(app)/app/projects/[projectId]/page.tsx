@@ -62,7 +62,6 @@ export default async function ProjectPage({
   const project = await prisma.project.findFirst({
     where: { id: projectId },
     include: {
-      agency: true,
       steps: {
         orderBy: { position: "asc" },
         include: {
@@ -84,7 +83,7 @@ export default async function ProjectPage({
         orderBy: { createdAt: "desc" },
         take: 1,
       },
-      activities: { orderBy: { createdAt: "desc" }, take: 50 },
+      activities: { orderBy: { createdAt: "desc" }, take: 20 },
     },
   });
 
@@ -92,6 +91,9 @@ export default async function ProjectPage({
 
   const progress = progressOf(project.steps);
   const activeLink = project.portalLinks[0] ?? null;
+  // Le projet appartient forcement a l'agence de la session : son branding
+  // est deja dans le contexte, inutile de le relire.
+  const agency = ctx.agency;
   const invites = await lastInvitesByEmail(project.id);
   const submitted = project.steps.filter(
     (step) => step.status === "SUBMITTED",
@@ -278,7 +280,7 @@ export default async function ProjectPage({
             defaultMessage={[
               "Bonjour,",
               "",
-              `${project.agency.name} a préparé votre espace pour ${project.name}. Vous y déposez les éléments attendus et suivez l'avancement en temps réel.`,
+              `${agency.name} a préparé votre espace pour ${project.name}. Vous y déposez les éléments attendus et suivez l'avancement en temps réel.`,
               "",
               "Aucun compte à créer : ce lien vous identifie.",
             ].join("\n")}

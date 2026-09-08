@@ -8,4 +8,7 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+// Conserve l'instance sur globalThis y compris en production : une lambda
+// reutilisee repart avec sa connexion deja ouverte, sans nouvelle poignee
+// de main TLS vers la base.
+globalForPrisma.prisma = prisma;

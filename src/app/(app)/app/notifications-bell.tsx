@@ -27,10 +27,9 @@ export type NotificationItem = {
 type Props = {
   items: NotificationItem[];
   unread: number;
-  compact: boolean;
 };
 
-export function NotificationsBell({ items, unread, compact }: Props) {
+export function NotificationsBell({ items, unread }: Props) {
   const [open, setOpen] = useState(false);
   const [, startTransition] = useTransition();
 
@@ -43,20 +42,12 @@ export function NotificationsBell({ items, unread, compact }: Props) {
           unread > 0 ? `Notifications (${unread} non lues)` : "Notifications"
         }
         aria-expanded={open}
-        className={cn(
-          "focusable relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[var(--color-muted)] transition-colors hover:bg-black/[0.04] hover:text-[var(--color-ink)]",
-          compact && "justify-center px-0",
-        )}
+        className="focusable relative flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-[var(--color-muted)] transition-colors hover:bg-black/[0.04] hover:text-[var(--color-ink)]"
       >
         <Bell size={16} className="shrink-0" />
-        {!compact && "Notifications"}
+        <span data-label>Notifications</span>
         {unread > 0 && (
-          <span
-            className={cn(
-              "ml-auto rounded-full bg-[var(--color-brand-soft)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-brand-ink)]",
-              compact && "absolute right-1 top-1 ml-0 px-1 py-0",
-            )}
-          >
+          <span className="ml-auto rounded-full bg-[var(--color-brand-soft)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-brand-ink)]">
             {unread}
           </span>
         )}
