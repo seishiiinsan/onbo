@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { emailProvider, SendError } from "@/lib/email/providers";
+import { logger } from "@/lib/logger";
+import { captureError } from "@/lib/sentry";
 import type { Mail } from "@/lib/email/types";
 
 /**
@@ -78,6 +80,12 @@ async function deliverRecord(record: Deliverable) {
       },
     });
 
+    logger.info("email envoyé", {
+      id: record.id,
+      to: record.to,
+      category: record.category,
+      provider: provider.name,
+    });
     return true;
   } catch (error) {
     const attempts = record.attempts + 1;
@@ -97,6 +105,20 @@ async function deliverRecord(record: Deliverable) {
         nextAttemptAt: exhausted ? null : nextAttempt(attempts),
       },
     });
+
+    if (exhausted) {
+      captureError(error, {
+        source: "email",
+        id: record.id,
+        category: record.category,
+        attempts,
+      });
+    } else {
+      logger.warn("email en échec, nouvelle tentative programmée", {
+        id: record.id,
+        attempts,
+      });
+    }
 
     return false;
   }
@@ -160,6 +182,8 @@ export async function markBounced(input: {
       ),
     },
   });
+
+  logger.warn("email non distribué", { id: record.id, to: record.to });
 
   // Le rebond doit se voir cote agence : il atterrit dans le fil du projet.
   if (record.projectId) {
