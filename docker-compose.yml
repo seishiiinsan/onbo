@@ -48,6 +48,7 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       METRICS_TOKEN: ${METRICS_TOKEN:-}
       APP_RELEASE: ${APP_RELEASE:-}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
       QUOTA_PROJECT_BYTES: ${QUOTA_PROJECT_BYTES:-}
       QUOTA_AGENCY_BYTES: ${QUOTA_AGENCY_BYTES:-}
       ONBO_ENCRYPTION_KEY: ${ONBO_ENCRYPTION_KEY:?cle de chiffrement manquante}
@@ -112,6 +113,38 @@ services:
         if [ $$((tick % 1440)) -eq 0 ]; then
           curl -s -X POST -H \"x-cron-secret: $$CRON_SECRET\" http://app:3000/api/cron/digest >/dev/null || true;
         fi;
+      done"
+
+  # Sauvegardes chiffrees quotidiennes (issue #31).
+  #
+  # Image postgres pour disposer de pg_dump et psql ; le script est celui du
+  # depot, monte en lecture seule. Le stockage de destination est distinct du
+  # serveur : une panne disque ne doit pas emporter les sauvegardes.
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-onbo}:${POSTGRES_PASSWORD:-onbo}@db:5432/${POSTGRES_DB:-onbo}?schema=public
+      UPLOAD_DIR: /app/uploads
+      BACKUP_KEY: ${BACKUP_KEY:-}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION:-fr-par}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      BACKUP_S3_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
+    volumes:
+      - uploads:/app/uploads:ro
+      - ./scripts:/opt/onbo/scripts:ro
+    command: >
+      sh -c "apk add --no-cache nodejs >/dev/null &&
+      while true; do
+        node /opt/onbo/scripts/backup.mjs || true;
+        sleep 86400;
       done"
 
   # Sonde externe (issue #35) : /api/health et le portail, toutes les 60 s.
