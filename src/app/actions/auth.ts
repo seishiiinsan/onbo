@@ -3,6 +3,9 @@
 import { redirect } from "next/navigation";
 import { createLoginToken, destroySession } from "@/lib/auth";
 import { sendMail } from "@/lib/mailer";
+import { loginLinkEmail } from "@/lib/email/templates";
+
+const LOGIN_LINK_TTL_MIN = 15;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -22,11 +25,8 @@ export async function requestLoginLink(
   const base = process.env.APP_URL ?? "http://localhost:3000";
   const link = `${base}/verify?token=${token}`;
 
-  await sendMail({
-    to: email,
-    subject: "Votre lien de connexion Onbo",
-    text: `Connectez-vous en cliquant sur ce lien (valable 15 minutes) :\n\n${link}\n\nSi vous n'avez rien demandé, ignorez cet email.`,
-  });
+  const template = loginLinkEmail(link, LOGIN_LINK_TTL_MIN);
+  await sendMail({ to: email, ...template });
 
   return { sent: true };
 }

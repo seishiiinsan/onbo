@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { sendMail } from "@/lib/mailer";
 import { portalUrl } from "@/lib/portal";
+import { reminderEmail } from "@/lib/email/templates";
 
 /**
  * Relances automatiques (issue #16).
@@ -51,24 +52,27 @@ export async function runReminders(now = new Date()) {
       continue;
     }
 
-    const pending = project.steps.map((step) => `· ${step.title}`).join("\n");
+    const pending = project.steps.map((step) => step.title);
     const url = portalUrl(link.token);
 
     for (const { client } of project.clients) {
+      const template = reminderEmail({
+        branding: {
+          agencyName: project.agency.name,
+          accentColor: project.agency.accentColor,
+          logoUrl: project.agency.logoUrl,
+        },
+        projectName: project.name,
+        clientName: client.name,
+        pending,
+        url,
+      });
+
       await sendMail({
         to: client.email,
-        subject: `${project.name} — il manque encore quelques éléments`,
-        text: [
-          `Bonjour${client.name ? ` ${client.name}` : ""},`,
-          "",
-          `${project.agency.name} attend encore ces éléments pour avancer sur ${project.name} :`,
-          "",
-          pending,
-          "",
-          `Tout se dépose ici : ${url}`,
-          "",
-          "Merci !",
-        ].join("\n"),
+        agencyId: project.agencyId,
+        projectId: project.id,
+        ...template,
       });
     }
 

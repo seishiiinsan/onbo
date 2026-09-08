@@ -1,27 +1,14 @@
+import { enqueueMail } from "@/lib/email/queue";
+import type { Mail } from "@/lib/email/types";
+
 /**
- * Adaptateur d'envoi d'email.
+ * Point d'entree unique pour l'envoi d'email (issue #29).
  *
- * En dev (et tant qu'aucun fournisseur n'est branche), les messages partent
- * dans les logs : le lien magique est directement cliquable depuis la console.
- * Voir l'issue #16 pour le branchement d'un vrai fournisseur EU.
+ * Les appelants ne connaissent que sendMail() : le choix du fournisseur, les
+ * gabarits, la file et les rebonds vivent dans src/lib/email.
  */
-export type Mail = {
-  to: string;
-  subject: string;
-  text: string;
-};
+export type { Mail } from "@/lib/email/types";
 
 export async function sendMail(mail: Mail): Promise<void> {
-  console.log(
-    [
-      "",
-      "──────── EMAIL ────────",
-      `À       : ${mail.to}`,
-      `Sujet   : ${mail.subject}`,
-      "",
-      mail.text,
-      "───────────────────────",
-      "",
-    ].join("\n"),
-  );
+  await enqueueMail(mail);
 }
